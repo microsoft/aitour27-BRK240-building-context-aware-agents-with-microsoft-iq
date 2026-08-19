@@ -51,23 +51,64 @@ and surfaced as env vars in `.env.example`.
 
 **Note:** You must be enrolled in the [Frontier preview program](https://adoption.microsoft.com/en-us/copilot/frontier-program/) to publish a Foundry agent to Microsoft Agent 365.
 
-Ensure you have the following installed:
+### Tools to install
 
-| Requirement | Description |
-|-------------|-------------|
-| [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) | Infrastructure deployment tool |
-| [Python 3.11+](https://www.python.org/downloads/) | Agent runtime (built and packaged inside the container image by ACR Build) |
-| [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) | Used by the deploy + `infra/a365` scripts (ACR Build runs in the cloud — no local Docker required) |
+| Requirement | Why |
+|-------------|-----|
+| [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) | Provisions Foundry + deploys the hosted agent (`azd up`) |
+| [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) | Auth + the `infra/a365` and seeding scripts (ACR builds in the cloud — no local Docker) |
+| [Python 3.11+](https://www.python.org/downloads/) | Runs the Foundry IQ + ontology seed scripts |
+| [uv](https://docs.astral.sh/uv/) | Runs the Fabric provision scripts (`data/caldova-upstream/provision`) |
 
-### 🔐 Required Permissions
+### Azure resources you must have **before** you start
 
-- **Owner** role on the Azure subscription
-- **Azure AI User** or **Cognitive Services User** role at subscription or resource group level
-- **Tenant Admin** role for organization-wide configuration
+`azd up` provisions the Foundry account/project + Container Registry (+ Bot Service). It does **not** create the data-plane resources the four IQs need — you bring these:
+
+| Pre-existing resource | Used by | You provide |
+|---|---|---|
+| **Azure AI Search** service | Foundry IQ (knowledge base) | `AZURE_AI_SEARCH_SERVICE_ENDPOINT` |
+| **Microsoft Fabric** workspace on an active **capacity** | Fabric IQ (supplier analytics + Data Agent) | `FABRIC_WORKSPACE_ID` |
+| A **Foundry project for the IQ connections** (`IQ_PROJECT_ENDPOINT`) | All four IQ connections live here | see "Two-project model" below |
+| A **Web IQ (`api.microsoft.ai`) subscription key** | Web IQ connection | `WEB_IQ_API_KEY` (bring your own) |
+
+> **Two-project model.** The agent is a *hosted* agent in the project `azd` provisions,
+> but the four IQ **connections** live in a separate Foundry project you point at with
+> `IQ_PROJECT_ENDPOINT`. They can be the same project, but if they differ, the agent's
+> instance identity must be granted access to the IQ project — run
+> [`grant-iq-project-access.ps1`](../infra/a365/grant-iq-project-access.ps1) after deploy.
+
+### 🔐 Required permissions
+
+- **Owner** on the Azure subscription (so `azd` can create resources and assign roles)
+- **Cognitive Services User** (or higher) on the Foundry account
+- Rights to create items in the **Fabric workspace** and write to the **Search service**
+- **Tenant / AI Administrator** to approve the Agent 365 blueprint
 
 ---
 
 ## 🚀 Quick Start
+
+### Reproduce this demo end-to-end
+
+`azd up` gets you most of the way, but this scenario has resources it can't create and
+steps that are manual by design. Here is the **honest, complete order** — automated (⚙️)
+and manual (✋):
+
+| # | Step | Type |
+|---|------|------|
+| 1 | Have the prerequisites above (Search service, Fabric workspace + capacity, Web IQ key, tools) | ✋ one-time |
+| 2 | `az login` + `azd auth login` | ✋ |
+| 3 | Set seeding inputs: `azd env set SEED_IQ_ON_PROVISION 1`, `TENANT_ID`, `FABRIC_WORKSPACE_ID`, `AZURE_AI_SEARCH_SERVICE_ENDPOINT`, `WEB_IQ_API_KEY` | ✋ |
+| 4 | `azd up` — provisions Foundry + ACR, seeds all four IQs, registers connections, builds + deploys the agent | ⚙️ |
+| 5 | **Publish the Fabric ontology**: open `CaldovaSupplierOntology` in Fabric → **Publish** → add it to `SupplierDataAgent` (preview: portal-only) | ✋ |
+| 6 | `./infra/a365/publish-autopilot.ps1` — registers the agent in Agent 365 | ⚙️ |
+| 7 | **Approve the agent blueprint** in the Microsoft 365 admin center | ✋ |
+| 8 | **Set the Bot ID** in the Teams Developer Portal | ✋ |
+| 9 | **Hire an instance** in Teams (Apps → Agents for your team) | ✋ |
+
+Steps 1, 5, 7, 8, 9 are manual — steps 5/7/8/9 are inherent to Fabric IQ preview and the
+Agent 365 governance model (admin approval + licensed hire), not gaps in this repo. The
+detailed walkthrough for each step follows.
 
 ### Step 1: Authenticate
 
@@ -98,17 +139,30 @@ Before deploying, you can customize:
 
 #### Deploy
 
-This uses **ACR Build** (cloud build) — no local Docker required. Run:
+This uses **ACR Build** (cloud build) — no local Docker required.
 
 ```powershell
-# 1) Provision the Foundry account/project/ACR and deploy the hosted agent.
-#    (postprovision builds the image and creates the agent; the blueprint +
-#    instance identity are auto-created by the version-create.)
-azd provision
+# 1) Tell azd to seed the four IQs + register their connections during provisioning,
+#    and give the seeders their inputs (Search + Fabric are your pre-existing resources).
+azd env set SEED_IQ_ON_PROVISION 1
+azd env set TENANT_ID <tenant-guid>
+azd env set FABRIC_WORKSPACE_ID <fabric-workspace-guid>
+azd env set AZURE_AI_SEARCH_SERVICE_ENDPOINT https://<your-search>.search.windows.net
+azd env set WEB_IQ_API_KEY <your-api.microsoft.ai-key>   # enables the Web IQ connection
 
-# 2) Register the deployed agent in Agent 365 (Bot Service + M365 publish + grants).
+pip install -r infra/scripts/seed-requirements.txt        # + uv, for the Fabric provision scripts
+
+# 2) Provision Foundry + ACR, seed the IQs, build the image, and create the hosted agent.
+azd up
+
+# 3) Register the deployed agent in Agent 365 (Bot Service + M365 publish + grants).
 ./infra/a365/publish-autopilot.ps1
 ```
+
+> Not seeding during provision? Leave `SEED_IQ_ON_PROVISION` unset and run
+> `./infra/scripts/seed-and-connect.ps1 -SetAzdEnv` yourself after `azd provision`.
+> Either way, after deploy, **publish the Fabric ontology** (portal — see
+> [supplier-ontology.md](supplier-ontology.md)) so the graph is query-ready.
 
 After deployment completes, retrieve your resource values:
 

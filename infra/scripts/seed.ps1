@@ -70,6 +70,17 @@ try {
 
     if (-not $SkipOntology) {
         Write-Host "=== [2] Fabric IQ - create the supplier ontology structure ===" -ForegroundColor Cyan
+        $workspaceId = Get-EnvOrThrow "FABRIC_WORKSPACE_ID"
+        # Discover the CaldovaSupplierAnalytics lakehouse GUID by name (created in step 1)
+        # so the ontology binds to THIS deployment's lakehouse, not a hardcoded default.
+        $lhName = $env:FABRIC_LAKEHOUSE_NAME; if (-not $lhName) { $lhName = "CaldovaSupplierAnalytics" }
+        $fabTok = az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv
+        $items = (Invoke-RestMethod "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/items" `
+            -Headers @{ Authorization = "Bearer $fabTok" }).value
+        $lh = $items | Where-Object { $_.type -eq 'Lakehouse' -and $_.displayName -eq $lhName } | Select-Object -First 1
+        if (-not $lh) { throw "Lakehouse '$lhName' not found in workspace $workspaceId. Run the Fabric provision step first (do not use -SkipFabric)." }
+        Write-Host "  Lakehouse '$lhName' = $($lh.id)"
+        $env:FABRIC_LAKEHOUSE_ID = $lh.id
         python infra/scripts/create-supplier-ontology.py
         if ($LASTEXITCODE -ne 0) { throw "create-supplier-ontology.py failed ($LASTEXITCODE)." }
         Write-Host "  Ontology structure created. One manual step remains (preview): open" -ForegroundColor Yellow

@@ -21,10 +21,10 @@ IMPORTANT - one manual step remains (preview limitation):
   The most reliable path is the portal one-click:
     Fabric workspace -> SupplierSM -> ribbon **Generate Ontology** -> name it -> Create.
 
-Env vars (fall back to the current Caldova workspace + supplier lakehouse when unset):
-  FABRIC_WORKSPACE_ID   Fabric workspace containing the supplier model + lakehouse
-  FABRIC_LAKEHOUSE_ID   CaldovaSupplierAnalytics item id (source of the Delta tables)
-  ONTOLOGY_NAME         Ontology display name (letters/numbers/underscore only)
+Env vars (all required except ONTOLOGY_NAME; seed.ps1 sets them for you):
+  FABRIC_WORKSPACE_ID   Fabric workspace containing the supplier model + lakehouse (required)
+  FABRIC_LAKEHOUSE_ID   CaldovaSupplierAnalytics item id (required; seed.ps1 discovers it by name)
+  ONTOLOGY_NAME         Ontology display name (letters/numbers/underscore only; default CaldovaSupplierOntology)
 """
 import base64
 import json
@@ -36,9 +36,21 @@ import uuid
 
 import requests
 
-WORKSPACE_ID = os.getenv("FABRIC_WORKSPACE_ID", "a78aa167-5fc6-46b2-9be9-838e69cb4b99")
-LAKEHOUSE_ID = os.getenv("FABRIC_LAKEHOUSE_ID", "fe35d4c2-1520-4520-ac40-4b64a10b316d")
+# These MUST come from the environment so the ontology binds to YOUR deployment's
+# workspace + lakehouse. seed.ps1 discovers the CaldovaSupplierAnalytics lakehouse by
+# name and sets FABRIC_LAKEHOUSE_ID before calling this script. Fail loudly rather than
+# silently defaulting to someone else's resources.
+WORKSPACE_ID = os.getenv("FABRIC_WORKSPACE_ID")
+LAKEHOUSE_ID = os.getenv("FABRIC_LAKEHOUSE_ID")
 ONTOLOGY_NAME = os.getenv("ONTOLOGY_NAME", "CaldovaSupplierOntology")
+
+if not WORKSPACE_ID or not LAKEHOUSE_ID:
+    raise SystemExit(
+        "FABRIC_WORKSPACE_ID and FABRIC_LAKEHOUSE_ID are required. Run via "
+        "infra/scripts/seed.ps1 (which discovers the lakehouse by name), or set both "
+        "env vars manually (FABRIC_LAKEHOUSE_ID = the CaldovaSupplierAnalytics lakehouse GUID)."
+    )
+
 
 # Match the portal-generated definition exactly: every part carries a $schema and
 # LakehouseTable bindings use sourceSchema=null (NOT "dbo").
