@@ -112,12 +112,20 @@ catch {
 #   - Microsoft Graph        : mail/chat/files/sites/channel scopes (Work IQ)
 #   - Azure Machine Learning : user_impersonation (enables the ai.azure.com token)
 #   - Power Platform API     : Connectivity.Connections.Read (Fabric / connections)
+#   - Power BI Service       : DataAgent + SemanticModel + Workspace scopes (Fabric IQ —
+#                              REQUIRED for the Fabric Data Agent to execute queries;
+#                              without it Fabric IQ fails with PowerBIUserAccessTokenNotFoundError)
+#   - Work IQ                : WorkIQAgent.Ask (REQUIRED — the agent mints a WorkIQAgent.Ask
+#                              token and attaches it as the Work IQ tool header; without it
+#                              the mailbox tools never resolve)
 #   - Agent365Observability  : Agent365.Observability.OtelWrite (telemetry; benign)
 # -----------------------------------------------------------------------------
 $oboResources = @(
     @{ Name = "Microsoft Graph";        AppId = "00000003-0000-0000-c000-000000000000"; Scope = "Mail.ReadWrite Mail.Send Chat.ReadWrite User.Read.All Sites.Read.All Files.ReadWrite.All ChannelMessage.Read.All ChannelMessage.Send" }
     @{ Name = "Azure Machine Learning"; AppId = "18a66f5f-dbdf-4c17-9dd7-1634712a9cbe"; Scope = "user_impersonation" }
     @{ Name = "Power Platform API";     AppId = "8578e004-a5c6-46e7-913e-12f58912df43"; Scope = "Connectivity.Connections.Read" }
+    @{ Name = "Power BI Service";       AppId = "00000009-0000-0000-c000-000000000000"; Scope = "DataAgent.Read.All DataAgent.Execute.All SemanticModel.Read.All Item.Read.All Workspace.Read.All" }
+    @{ Name = "Work IQ";                AppId = "fdcc1f02-fc51-4226-8753-f668596af7f7"; Scope = "WorkIQAgent.Ask" }
     @{ Name = "Agent365Observability";  AppId = "9b975845-388f-4429-889e-eab1ef63949c"; Scope = "Agent365.Observability.OtelWrite" }
 )
 
