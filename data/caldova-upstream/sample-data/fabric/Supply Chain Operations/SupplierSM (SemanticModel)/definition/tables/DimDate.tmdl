@@ -1,0 +1,76 @@
+/// Daily date dimension spanning the fixed two-year supplier history window.
+table DimDate
+	sourceLineageTag: [dbo].[DimDate]
+	dataCategory: Time
+
+	column DateKey
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: DateKey
+
+	column Date
+		dataType: dateTime
+		isKey
+		sourceColumn: Date
+
+	column Year
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: Year
+
+	column Quarter
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: Quarter
+
+	column QuarterName
+		dataType: string
+		sourceColumn: QuarterName
+
+	column MonthNumber
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: MonthNumber
+
+	column MonthName
+		dataType: string
+		sourceColumn: MonthName
+		sortByColumn: MonthNumber
+
+	column MonthYear
+		dataType: string
+		sourceColumn: MonthYear
+		sortByColumn: MonthKey
+
+	column MonthKey
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: MonthKey
+
+	column WeekOfYear
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: WeekOfYear
+
+	column DayOfWeekNumber
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: DayOfWeekNumber
+
+	column DayName
+		dataType: string
+		sourceColumn: DayName
+		sortByColumn: DayOfWeekNumber
+
+	column IsWeekend
+		dataType: string
+		sourceColumn: IsWeekend
+
+	partition DimDate = entity
+		mode: directLake
+		source
+			entityName: DimDate
+			schemaName: dbo
+			expressionSource: DatabaseQuery

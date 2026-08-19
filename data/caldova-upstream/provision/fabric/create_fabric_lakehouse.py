@@ -1,0 +1,583 @@
+"""Create the Caldova supplier analytics lakehouse and load deterministic Delta tables."""
+
+import argparse
+import hashlib
+import io
+import json
+import os
+import re
+import warnings
+from collections import Counter
+from datetime import date, timedelta
+from pathlib import Path
+from typing import Any
+
+import pyarrow as pa
+import pyarrow.parquet as pq
+from azure.identity import AzureDeveloperCliCredential
+from azure.storage.filedatalake import DataLakeServiceClient
+from dotenv import load_dotenv, set_key
+
+warnings.filterwarnings("ignore", category=SyntaxWarning, module=r"microsoft_fabric_api\..*")
+
+from microsoft_fabric_api import FabricClient  # noqa: E402
+from microsoft_fabric_api.generated.lakehouse.models import (  # noqa: E402
+    CreateLakehouseRequest,
+    LoadTableRequest,
+    Parquet,
+)
+
+REPO_ROOT = Path(__file__).parents[2]
+ENV_PATH = REPO_ROOT / ".env"
+IDENTITY_PATH = REPO_ROOT / "sample-data/json/waypoint-supplier-invoices.json"
+PROFILE_PATH = REPO_ROOT / "sample-data/json/supplier-kpi-profiles.json"
+ONELAKE_DFS_URL = "https://onelake.dfs.fabric.microsoft.com"
+PORTAL_BASE_URL = "https://msit.powerbi.com"
+LAKEHOUSE_NAME = "CaldovaSupplierAnalytics"
+SNAPSHOT_END = date(2026, 8, 17)
+SNAPSHOT_WEEKS = 105
+
+STATE_NAMES = {
+    "CA": "California",
+    "MA": "Massachusetts",
+    "MD": "Maryland",
+    "MN": "Minnesota",
+    "NC": "North Carolina",
+    "NJ": "New Jersey",
+    "TN": "Tennessee",
+}
+
+TABLE_SCHEMAS = {
+    "DimDate": pa.schema(
+        [
+            pa.field("DateKey", pa.int32(), nullable=False),
+            pa.field("Date", pa.date32()),
+            pa.field("Year", pa.int32()),
+            pa.field("Quarter", pa.int32()),
+            pa.field("QuarterName", pa.string()),
+            pa.field("MonthNumber", pa.int32()),
+            pa.field("MonthName", pa.string()),
+            pa.field("MonthYear", pa.string()),
+            pa.field("MonthKey", pa.int32()),
+            pa.field("WeekOfYear", pa.int32()),
+            pa.field("DayOfWeekNumber", pa.int32()),
+            pa.field("DayName", pa.string()),
+            pa.field("IsWeekend", pa.string()),
+        ]
+    ),
+    "DimSupplier": pa.schema(
+        [
+            pa.field("SupplierID", pa.string(), nullable=False),
+            pa.field("SupplierName", pa.string()),
+            pa.field("ServiceCategory", pa.string()),
+            pa.field("LocationID", pa.string()),
+            pa.field("Location", pa.string()),
+            pa.field("ExperienceYears", pa.int32()),
+            pa.field("AvailableCapacityKPerMonth", pa.int32()),
+            pa.field("MOQKUnits", pa.int32()),
+            pa.field("RegulatoryInspections3yr", pa.int32()),
+            pa.field("FinancialStabilityRating", pa.string()),
+        ]
+    ),
+    "SupplierPerformance": pa.schema(
+        [
+            pa.field("SupplierID", pa.string(), nullable=False),
+            pa.field("DateKey", pa.int32(), nullable=False),
+            pa.field("OTIF12moPct", pa.float64()),
+            pa.field("BatchRejectionRatePct", pa.float64()),
+            pa.field("RightFirstTimePct", pa.float64()),
+            pa.field("CustomerComplaintsPer1k", pa.float64()),
+            pa.field("LastRegulatoryInspection", pa.string()),
+            pa.field("OpenRegulatoryActions", pa.int32()),
+            pa.field("LastInternalAuditResult", pa.string()),
+            pa.field("CurrentUtilizationPct", pa.float64()),
+            pa.field("LeadTimeToFirstProductionWks", pa.int32()),
+            pa.field("CostIndex", pa.int32()),
+            pa.field("TechTransferSuccessPct", pa.float64()),
+        ]
+    ),
+    "DimLocation": pa.schema(
+        [
+            pa.field("LocationID", pa.string(), nullable=False),
+            pa.field("Location", pa.string()),
+            pa.field("StateOrRegion", pa.string()),
+            pa.field("Country", pa.string()),
+        ]
+    ),
+    "DimInspectionResult": pa.schema(
+        [
+            pa.field("ResultCode", pa.string(), nullable=False),
+            pa.field("ResultName", pa.string()),
+            pa.field("Description", pa.string()),
+            pa.field("SeverityRank", pa.int32()),
+            pa.field("IsDisqualifying", pa.string()),
+        ]
+    ),
+    "DimAuditResult": pa.schema(
+        [
+            pa.field("AuditResult", pa.string(), nullable=False),
+            pa.field("ResultRank", pa.int32()),
+            pa.field("IsPassing", pa.string()),
+        ]
+    ),
+    "DimFinancialRating": pa.schema(
+        [
+            pa.field("Rating", pa.string(), nullable=False),
+            pa.field("RatingRank", pa.int32()),
+            pa.field("InvestmentGrade", pa.string()),
+        ]
+    ),
+}
+
+
+def require_env(name: str) -> str:
+    """Return a required environment setting."""
+    value = os.getenv(name, "").strip()
+    if not value:
+        raise RuntimeError(f"{name} is required for Fabric deployment.")
+    return value
+
+
+def stable_unit(*values: object) -> float:
+    """Return a deterministic value in the interval [0, 1)."""
+    digest = hashlib.sha256("|".join(map(str, values)).encode()).digest()
+    return int.from_bytes(digest[:8], "big") / 2**64
+
+
+def bounded(value: float | None, lower: float, upper: float) -> float | None:
+    """Clamp a nullable numeric value."""
+    if value is None:
+        return None
+    return round(min(upper, max(lower, value)), 5)
+
+
+def canonical_suppliers() -> list[dict[str, str]]:
+    """Read canonical supplier identity and billing locations from Waypoint JSON."""
+    source = json.loads(IDENTITY_PATH.read_text())
+    invoices = {row["supplier_id"]: row for row in source["invoices"]}
+    billing = {
+        row["supplier_id"]: row["billing_profile"]["address_lines"]
+        for row in source["document_generation"]["profiles"]
+    }
+    if set(invoices) != set(billing):
+        raise ValueError("Invoice and billing-profile supplier sets differ.")
+    return [
+        {
+            "supplier_id": supplier_id,
+            "supplier_name": invoices[supplier_id]["supplier_name"],
+            "address_lines": billing[supplier_id],
+        }
+        for supplier_id in sorted(invoices)
+    ]
+
+
+def normalize_location(address_lines: list[str]) -> tuple[str, str, str]:
+    """Convert a billing address to reporting-friendly location fields."""
+    country = address_lines[-1]
+    locality = address_lines[-2]
+    us_match = re.match(r"(.+), ([A-Z]{2}) \d{5}$", locality)
+    if us_match:
+        city, state_code = us_match.groups()
+        region = STATE_NAMES.get(state_code, state_code)
+        return f"{city}, {region}, {country}", region, country
+
+    locality = re.sub(r"^\d{4}\s+", "", locality)
+    locality = re.sub(r"\s+[A-Z]\d{2}\s+[A-Z0-9]{4}$", "", locality)
+    locality = re.sub(r"\s+\d{5,6}$", "", locality)
+    region = locality.split(",")[-1].strip()
+    return f"{locality}, {country}" if locality != country else country, region, country
+
+
+def profile_data() -> dict[str, dict[str, Any]]:
+    """Read and validate synthetic KPI profiles."""
+    payload = json.loads(PROFILE_PATH.read_text())
+    profiles = payload["profiles"]
+    profile_ids = [row["supplier_id"] for row in profiles]
+    if payload["history_end_date"] != SNAPSHOT_END.isoformat():
+        raise ValueError("Profile history end date does not match the generator contract.")
+    if payload["snapshot_weeks"] != SNAPSHOT_WEEKS:
+        raise ValueError("Profile snapshot count does not match the generator contract.")
+    if len(profiles) != 15 or len(set(profile_ids)) != 15:
+        raise ValueError("Synthetic profiles must contain 15 unique suppliers.")
+    return {row["supplier_id"]: row for row in profiles}
+
+
+def date_rows(snapshot_dates: list[date]) -> list[dict[str, Any]]:
+    """Build a daily date dimension spanning all weekly snapshots."""
+    rows = []
+    current = snapshot_dates[0]
+    while current <= snapshot_dates[-1]:
+        quarter = (current.month - 1) // 3 + 1
+        rows.append(
+            {
+                "DateKey": int(current.strftime("%Y%m%d")),
+                "Date": current,
+                "Year": current.year,
+                "Quarter": quarter,
+                "QuarterName": f"Q{quarter} {current.year}",
+                "MonthNumber": current.month,
+                "MonthName": current.strftime("%B"),
+                "MonthYear": current.strftime("%b %Y"),
+                "MonthKey": current.year * 100 + current.month,
+                "WeekOfYear": current.isocalendar().week,
+                "DayOfWeekNumber": current.weekday() + 1,
+                "DayName": current.strftime("%A"),
+                "IsWeekend": "Yes" if current.weekday() >= 5 else "No",
+            }
+        )
+        current += timedelta(days=1)
+    return rows
+
+
+def performance_rows(
+    profiles: dict[str, dict[str, Any]], snapshot_dates: list[date]
+) -> list[dict[str, Any]]:
+    """Build deterministic weekly supplier performance snapshots."""
+    trend_sign = {"improving": 1, "stable": 0, "declining": -1}
+    rows = []
+    for supplier_id, profile in sorted(profiles.items()):
+        baseline = profile["baseline"]
+        direction = trend_sign[profile["trend"]]
+        for index, snapshot in enumerate(snapshot_dates):
+            progress = index / (len(snapshot_dates) - 1)
+            recent = max(0.0, (progress - 0.95) / 0.05)
+
+            def noise(metric: str, amplitude: float) -> float:
+                return (stable_unit(supplier_id, snapshot, metric) - 0.5) * amplitude
+
+            def metric(
+                key: str, amplitude: float, shift: float, lower: float, upper: float
+            ) -> float | None:
+                value = baseline[key]
+                if value is None:
+                    return None
+                return bounded(
+                    value + noise(key, amplitude) + direction * recent * shift,
+                    lower,
+                    upper,
+                )
+
+            rows.append(
+                {
+                    "SupplierID": supplier_id,
+                    "DateKey": int(snapshot.strftime("%Y%m%d")),
+                    "OTIF12moPct": metric("otif", 0.012, 0.025, 0.75, 0.999),
+                    "BatchRejectionRatePct": metric(
+                        "batch_rejection", 0.004, -0.008, 0.001, 0.08
+                    ),
+                    "RightFirstTimePct": metric(
+                        "right_first_time", 0.01, 0.018, 0.75, 0.999
+                    ),
+                    "CustomerComplaintsPer1k": metric(
+                        "complaints_per_1k", 0.5, -0.5, 0.1, 8.0
+                    ),
+                    "LastRegulatoryInspection": profile["inspection"],
+                    "OpenRegulatoryActions": profile["open_regulatory_actions"],
+                    "LastInternalAuditResult": profile["audit"],
+                    "CurrentUtilizationPct": metric(
+                        "utilization", 0.025, -0.03, 0.3, 0.99
+                    ),
+                    "LeadTimeToFirstProductionWks": round(
+                        max(
+                            1,
+                            baseline["lead_time_weeks"]
+                            + noise("lead_time_weeks", 2.0)
+                            - direction * recent * 2,
+                        )
+                    ),
+                    "CostIndex": round(
+                        max(
+                            50,
+                            baseline["cost_index"]
+                            + noise("cost_index", 4.0)
+                            - direction * recent * 2,
+                        )
+                    ),
+                    "TechTransferSuccessPct": metric(
+                        "tech_transfer_success", 0.01, 0.015, 0.5, 1.0
+                    ),
+                }
+            )
+    return rows
+
+
+def build_tables() -> dict[str, pa.Table]:
+    """Build every typed lakehouse table and validate the relational contract."""
+    suppliers = canonical_suppliers()
+    profiles = profile_data()
+    supplier_ids = {row["supplier_id"] for row in suppliers}
+    expected_ids = {f"sup-{number:03d}" for number in range(1, 16)}
+    if supplier_ids != expected_ids or set(profiles) != expected_ids:
+        raise ValueError("Canonical identity and synthetic profile IDs must be sup-001..sup-015.")
+
+    locations = []
+    supplier_rows = []
+    for index, supplier in enumerate(suppliers, start=1):
+        supplier_id = supplier["supplier_id"]
+        profile = profiles[supplier_id]
+        location, region, country = normalize_location(supplier["address_lines"])
+        location_id = f"L{index:03d}"
+        locations.append(
+            {
+                "LocationID": location_id,
+                "Location": location,
+                "StateOrRegion": region,
+                "Country": country,
+            }
+        )
+        static = profile["static"]
+        supplier_rows.append(
+            {
+                "SupplierID": supplier_id,
+                "SupplierName": supplier["supplier_name"],
+                "ServiceCategory": profile["service_category"],
+                "LocationID": location_id,
+                "Location": location,
+                "ExperienceYears": static["experience_years"],
+                "AvailableCapacityKPerMonth": static["available_capacity_k_per_month"],
+                "MOQKUnits": static["moq_k_units"],
+                "RegulatoryInspections3yr": static["regulatory_inspections_3yr"],
+                "FinancialStabilityRating": static["financial_rating"],
+            }
+        )
+
+    snapshot_dates = [
+        SNAPSHOT_END - timedelta(weeks=offset)
+        for offset in reversed(range(SNAPSHOT_WEEKS))
+    ]
+    performance = performance_rows(profiles, snapshot_dates)
+    counts = Counter(row["SupplierID"] for row in performance)
+    if set(counts) != supplier_ids or set(counts.values()) != {SNAPSHOT_WEEKS}:
+        raise ValueError("Every supplier must have exactly 105 performance snapshots.")
+
+    rows_by_table = {
+        "DimDate": date_rows(snapshot_dates),
+        "DimSupplier": supplier_rows,
+        "SupplierPerformance": performance,
+        "DimLocation": locations,
+        "DimInspectionResult": [
+            {
+                "ResultCode": "NAI",
+                "ResultName": "No Action Indicated",
+                "Description": "No objectionable conditions or practices were found.",
+                "SeverityRank": 1,
+                "IsDisqualifying": "No",
+            },
+            {
+                "ResultCode": "VAI",
+                "ResultName": "Voluntary Action Indicated",
+                "Description": "Voluntary correction is expected.",
+                "SeverityRank": 2,
+                "IsDisqualifying": "No",
+            },
+            {
+                "ResultCode": "OAI",
+                "ResultName": "Official Action Indicated",
+                "Description": "Regulatory or administrative action is recommended.",
+                "SeverityRank": 3,
+                "IsDisqualifying": "Yes",
+            },
+        ],
+        "DimAuditResult": [
+            {"AuditResult": "Outstanding", "ResultRank": 1, "IsPassing": "Yes"},
+            {"AuditResult": "Satisfactory", "ResultRank": 2, "IsPassing": "Yes"},
+            {
+                "AuditResult": "Requires Improvement",
+                "ResultRank": 3,
+                "IsPassing": "No",
+            },
+        ],
+        "DimFinancialRating": [
+            {"Rating": rating, "RatingRank": rank, "InvestmentGrade": investment}
+            for rating, rank, investment in (
+                ("A+", 1, "Yes"),
+                ("A", 2, "Yes"),
+                ("A-", 3, "Yes"),
+                ("B+", 4, "Yes"),
+                ("B", 5, "No"),
+                ("B-", 6, "No"),
+            )
+        ],
+    }
+    tables = {
+        name: pa.Table.from_pylist(rows_by_table[name], schema=schema)
+        for name, schema in TABLE_SCHEMAS.items()
+    }
+    if tables["DimSupplier"].num_rows != 15:
+        raise ValueError("DimSupplier must contain 15 rows.")
+    if tables["SupplierPerformance"].num_rows != 15 * SNAPSHOT_WEEKS:
+        raise ValueError("SupplierPerformance row count is incorrect.")
+    return tables
+
+
+def find_lakehouse(client: FabricClient, workspace_id: str):
+    """Find the configured lakehouse by display name."""
+    return next(
+        (
+            item
+            for item in client.lakehouse.items.list_lakehouses(workspace_id)
+            if item.display_name == LAKEHOUSE_NAME
+        ),
+        None,
+    )
+
+
+def parquet_bytes(table: pa.Table) -> bytes:
+    """Serialize one Arrow table as Parquet."""
+    output = io.BytesIO()
+    pq.write_table(table, output)
+    return output.getvalue()
+
+
+def upload_table(
+    credential: AzureDeveloperCliCredential,
+    client: FabricClient,
+    workspace_id: str,
+    lakehouse_id: str,
+    table_name: str,
+    table: pa.Table,
+) -> None:
+    """Upload Parquet and overwrite one managed Delta table."""
+    relative_path = f"Files/supplier-analytics/{table_name}.parquet"
+    filesystem = DataLakeServiceClient(
+        account_url=ONELAKE_DFS_URL, credential=credential
+    ).get_file_system_client(workspace_id)
+    file_client = filesystem.get_file_client(f"{lakehouse_id}/{relative_path}")
+    file_client.upload_data(parquet_bytes(table), overwrite=True)
+    client.lakehouse.tables.begin_load_table(
+        workspace_id,
+        lakehouse_id,
+        table_name,
+        LoadTableRequest(
+            relative_path=relative_path,
+            path_type="File",
+            file_extension="parquet",
+            mode="Overwrite",
+            format_options=Parquet(),
+        ),
+    ).result()
+
+
+def delta_schema(
+    credential: AzureDeveloperCliCredential,
+    workspace_id: str,
+    lakehouse_id: str,
+    table_name: str,
+) -> dict[str, Any]:
+    """Read the latest Delta metadata schema from OneLake."""
+    filesystem = DataLakeServiceClient(
+        account_url=ONELAKE_DFS_URL, credential=credential
+    ).get_file_system_client(workspace_id)
+    log_path = f"{lakehouse_id}/Tables/{table_name}/_delta_log"
+    json_logs = sorted(
+        path.name
+        for path in filesystem.get_paths(path=log_path)
+        if path.name.endswith(".json")
+    )
+    for path in reversed(json_logs):
+        content = filesystem.get_file_client(path).download_file().readall().decode()
+        for line in content.splitlines():
+            action = json.loads(line)
+            if "metaData" in action:
+                return json.loads(action["metaData"]["schemaString"])
+    raise RuntimeError(f"No Delta metadata schema found for {table_name}.")
+
+
+def validate_delta_schema(expected: pa.Schema, actual: dict[str, Any], name: str) -> None:
+    """Compare persisted Delta fields with the Arrow schema contract."""
+    arrow_to_delta = {
+        "string": "string",
+        "int32": "integer",
+        "double": "double",
+        "date32[day]": "date",
+    }
+    expected_fields = [
+        {
+            "name": field.name,
+            "type": arrow_to_delta[str(field.type)],
+        }
+        for field in expected
+    ]
+    actual_fields = [
+        {
+            "name": field["name"],
+            "type": field["type"],
+        }
+        for field in actual["fields"]
+    ]
+    if actual_fields != expected_fields:
+        raise ValueError(f"Persisted Delta schema mismatch for {name}.")
+
+
+def deploy(tables: dict[str, pa.Table]) -> None:
+    """Create or reuse the lakehouse and overwrite all supplier tables."""
+    load_dotenv(ENV_PATH, override=True)
+    tenant_id = require_env("FABRIC_TENANT_ID")
+    workspace_id = require_env("FABRIC_WORKSPACE_ID")
+    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    try:
+        client = FabricClient(credential)
+        lakehouse = find_lakehouse(client, workspace_id)
+        if lakehouse is None:
+            print(f"Creating lakehouse '{LAKEHOUSE_NAME}'...")
+            lakehouse = client.lakehouse.items.begin_create_lakehouse(
+                workspace_id,
+                CreateLakehouseRequest(
+                    display_name=LAKEHOUSE_NAME,
+                    description="Synthetic supplier performance analytics for Caldova.",
+                ),
+            ).result
+        else:
+            print(f"Reusing lakehouse '{LAKEHOUSE_NAME}'.")
+
+        for table_name, table in tables.items():
+            print(f"Loading {table_name} ({table.num_rows:,} rows)...")
+            for field in table.schema:
+                if not field.nullable and table[field.name].null_count:
+                    column_name = f"{table_name}.{field.name}"
+                    raise ValueError(f"Non-nullable field contains nulls: {column_name}")
+            upload_table(
+                credential, client, workspace_id, lakehouse.id, table_name, table
+            )
+            validate_delta_schema(
+                table.schema,
+                delta_schema(credential, workspace_id, lakehouse.id, table_name),
+                table_name,
+            )
+
+        table_names = {item.name for item in client.lakehouse.tables.list_tables(
+            workspace_id, lakehouse.id
+        )}
+        missing = set(tables) - table_names
+        if missing:
+            raise RuntimeError(f"Fabric did not expose loaded tables: {sorted(missing)}")
+    finally:
+        credential.close()
+
+    url = (
+        f"{PORTAL_BASE_URL}/groups/{workspace_id}/lakehouses/{lakehouse.id}"
+        "?experience=fabric-developer"
+    )
+    set_key(ENV_PATH, "FABRIC_LAKEHOUSE_URL", url, quote_mode="never")
+    print(f"Lakehouse: {LAKEHOUSE_NAME} ({lakehouse.id})")
+    print(f"Fabric UI: {url}")
+
+
+def main() -> None:
+    """Validate locally and optionally deploy to Fabric."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--validate-only", action="store_true", help="Build and validate without Fabric."
+    )
+    args = parser.parse_args()
+    tables = build_tables()
+    print(
+        "Validated supplier tables: "
+        + ", ".join(f"{name}={table.num_rows:,}" for name, table in tables.items())
+    )
+    if not args.validate_only:
+        deploy(tables)
+
+
+if __name__ == "__main__":
+    main()

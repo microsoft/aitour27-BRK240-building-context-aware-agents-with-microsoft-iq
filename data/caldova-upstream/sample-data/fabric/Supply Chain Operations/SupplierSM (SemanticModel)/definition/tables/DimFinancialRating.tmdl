@@ -1,0 +1,22 @@
+table DimFinancialRating
+	sourceLineageTag: [dbo].[DimFinancialRating]
+
+	column Rating
+		dataType: string
+		sourceColumn: Rating
+		sortByColumn: RatingRank
+
+	column RatingRank
+		dataType: int64
+		sourceColumn: RatingRank
+
+	column InvestmentGrade
+		dataType: string
+		sourceColumn: InvestmentGrade
+
+	partition DimFinancialRating = entity
+		mode: directLake
+		source
+			entityName: DimFinancialRating
+			schemaName: dbo
+			expressionSource: DatabaseQuery

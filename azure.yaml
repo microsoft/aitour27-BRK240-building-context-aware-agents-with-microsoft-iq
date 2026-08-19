@@ -1,0 +1,37 @@
+name: caldova-supply-autopilot
+
+services:
+  caldova-supply-autopilot:
+    project: ./src/agent
+    host: azure.ai.agent
+    language: python
+    codeConfiguration:
+      dependencyResolution: remote_build
+      entryPoint: main.py
+      runtime: python_3_13
+    kind: hosted
+    name: caldova-supply-autopilot
+    protocols:
+      - protocol: responses
+        version: 2.0.0
+      - protocol: activity
+        version: 1.0.0
+
+hooks:
+  postprovision:
+    shell: pwsh
+    run: ./infra/scripts/post-provision.ps1
+    interactive: true
+    continueOnError: false
+
+# services:
+#   web:
+#     project: ./src
+#     language: csharp
+#     host: foundry.containeragent
+    # hooks:
+    #   # This hook runs before this specific service is built
+    #   prebuild:
+    #     posix:
+    #       shell: sh
+    #       run: ./service-prebuild.sh

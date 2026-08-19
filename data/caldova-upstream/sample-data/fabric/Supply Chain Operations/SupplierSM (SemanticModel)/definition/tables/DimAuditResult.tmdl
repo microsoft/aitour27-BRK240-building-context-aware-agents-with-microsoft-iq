@@ -1,0 +1,22 @@
+table DimAuditResult
+	sourceLineageTag: [dbo].[DimAuditResult]
+
+	column AuditResult
+		dataType: string
+		sourceColumn: AuditResult
+		sortByColumn: ResultRank
+
+	column ResultRank
+		dataType: int64
+		sourceColumn: ResultRank
+
+	column IsPassing
+		dataType: string
+		sourceColumn: IsPassing
+
+	partition DimAuditResult = entity
+		mode: directLake
+		source
+			entityName: DimAuditResult
+			schemaName: dbo
+			expressionSource: DatabaseQuery

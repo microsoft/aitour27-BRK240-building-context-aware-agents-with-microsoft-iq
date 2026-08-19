@@ -427,3 +427,18 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Seed orchestrator machine-readable output (contains resource ids)
+infra/scripts/.seed-fabric-output.json
+
+# Vendor Fabric seed output
+infra/scripts/.seed-fabric-vendor-output.json
+
+# vendored upstream provisioning secrets
+data/caldova-upstream/.env
+
+
+# Python virtual envs (incl. vendored upstream provisioning)
+.venv/
+**/.venv/
+

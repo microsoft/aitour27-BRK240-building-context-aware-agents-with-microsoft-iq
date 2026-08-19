@@ -1,0 +1,30 @@
+table DimInspectionResult
+	sourceLineageTag: [dbo].[DimInspectionResult]
+
+	column ResultCode
+		dataType: string
+		sourceColumn: ResultCode
+
+	column ResultName
+		dataType: string
+		sourceColumn: ResultName
+		sortByColumn: SeverityRank
+
+	column Description
+		dataType: string
+		sourceColumn: Description
+
+	column SeverityRank
+		dataType: int64
+		sourceColumn: SeverityRank
+
+	column IsDisqualifying
+		dataType: string
+		sourceColumn: IsDisqualifying
+
+	partition DimInspectionResult = entity
+		mode: directLake
+		source
+			entityName: DimInspectionResult
+			schemaName: dbo
+			expressionSource: DatabaseQuery

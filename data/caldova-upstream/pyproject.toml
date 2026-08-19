@@ -1,0 +1,30 @@
+[project]
+name = "caldova-sample-data"
+version = "0.1.0"
+description = "Reproducible fictional data for Caldova demos and prototypes"
+requires-python = ">=3.12"
+dependencies = [
+    "azure-identity>=1.25.2,<2",
+    "azure-storage-file-datalake>=12.23,<13",
+    "httpx>=0.28.1,<1",
+    "jinja2>=3.1,<4",
+    "microsoft-fabric-api>=0.1.0b20,<0.2",
+    "playwright>=1.54,<2",
+    "pyarrow>=23,<24",
+    "python-dotenv>=1.2,<2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
