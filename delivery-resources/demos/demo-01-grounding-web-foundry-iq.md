@@ -106,6 +106,36 @@ Web IQ's answer is also **dated to this week**, which only the live web could gi
 > live web; Foundry IQ gives it Caldova's own documents as a knowledge base. I didn't
 > write any retrieval code — I connected knowledge, not plumbing."
 
+## Voice-over script
+
+> Read naturally, narrating what's on screen. ~2 minutes.
+
+"Agents are only as good as the context they're given. So let me show you an agent
+that's grounded in two very different kinds of context — with no retrieval code from me.
+
+This is the Caldova Supply Autopilot, running in Microsoft Foundry. It's a hosted
+agent, and if I open its connections, you can see it already has **Web IQ** and
+**Foundry IQ** wired in — the live web, and an enterprise knowledge base.
+
+Let me chat with it. I'll ask about the outside world first: *'Any weather or carrier
+disruptions this week that could affect cold-chain shipments?'* Watch — it comes back
+with current events: storms, a carrier advisory, and notice it names its sources, and
+it's dated to this week. That's **Web IQ** — live information no internal system could
+have.
+
+Now, where does its *internal* knowledge come from? Let me show you. Back in Foundry,
+under Knowledge bases, this is `caldova-supply-kb`. It's not one big pile of PDFs —
+it's four organized sources: policies, procurement and contracts, supplier quality, and
+cold-chain evidence.
+
+So let me ask a question that lives inside those documents: *'Is a major cold-chain
+excursion eligible for replacement and credit?'* And there it is — a grounded answer,
+straight from Caldova's own policy, with a citation to the document.
+
+Two completely different questions — the live web and a policy buried in a PDF —
+answered by the same agent, each one grounded and cited. I didn't write any search
+code. I connected knowledge, not plumbing. That's Web IQ and Foundry IQ."
+
 ## Transcript
 
-_Paste the transcript from the recording here (also lives in the deck speaker notes)._
+_After recording, paste the final timed transcript here (also lives in the deck speaker notes)._

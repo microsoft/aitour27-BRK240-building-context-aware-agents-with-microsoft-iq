@@ -91,6 +91,35 @@ code and instructions that connect to it.
 > one tool reference and a few lines of routing — numbers go to Fabric, documents go
 > to Foundry."
 
+## Voice-over script
+
+> Read naturally, narrating what's on screen. ~2 minutes.
+
+"Numbers are a different kind of context. Caldova is qualifying its contract
+manufacturers, and all of that performance data lives in Microsoft Fabric — so let me
+show you how the agent reasons over it with **Fabric IQ**.
+
+This is the Caldova Supply Chain workspace. At the center is `SupplierSM`, the semantic
+model over our supplier data. And this — `CaldovaSupplierOntology` — is the graph on top
+of it: suppliers connected to their locations, their inspection results, audits, and
+financial ratings. That's what lets the agent reason over *relationships*, not just rows.
+
+Now the piece that makes it conversational: the `SupplierDataAgent`. It's pointed at the
+semantic model and the ontology, and it has its own instructions on how to interpret the
+data. Let me ask it: *'Rank all suppliers by latest OTIF and flag any with open
+regulatory actions.'* And it ranks all fifteen suppliers, live, over the real model —
+no spreadsheet, no export. Let me try a relationship question too: *'Which suppliers are
+in the same region?'* — and it groups them by location.
+
+So how does the agent use this? Let me show you the code. In `agent.py`, Fabric IQ is a
+single tool reference — `fabric_dataagent_preview` — pointed at that Data Agent. And in
+the instructions, this is the routing rule: anything about numbers, OTIF, quality,
+regulatory status goes to Fabric IQ; documents go to Foundry IQ. That one boundary is
+what keeps the two from stepping on each other.
+
+The agent doesn't move the data. It asks Fabric, in plain language, and gets governed
+answers back. That's Fabric IQ."
+
 ## Transcript
 
-_Paste the transcript from the recording here (also lives in the deck speaker notes)._
+_After recording, paste the final timed transcript here (also lives in the deck speaker notes)._

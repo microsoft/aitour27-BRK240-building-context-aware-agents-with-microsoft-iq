@@ -96,6 +96,39 @@ until step 1. For step 6 (relationships), don't combine two conditions in one as
 > I'm the owner and the human in the loop. That's a context-aware agent you can
 > actually put to work."
 
+## Voice-over script
+
+> Read naturally, narrating what's on screen. ~3 minutes.
+
+"So far you've seen the IQs one at a time. Now let me bring them together — as one
+governed teammate, working a real escalation end to end.
+
+First, does this agent actually read its own mail? In the Foundry Toolkit I'll ask:
+*'Any urgent supply escalations in your mailbox?'* — and it finds Maria Garcia's
+escalation. That's **Work IQ**, reading the agent's real mailbox.
+
+Now let me move to where people actually work — Microsoft Teams. Before I chat, notice
+this isn't an installed app. If I hover over the agent, you can see it reports to me —
+it's an autopilot, a teammate, not a bot.
+
+Let me work the escalation, one step at a time. *'Is a major cold-chain excursion
+eligible for replacement and credit?'* — that's the policy, from Foundry IQ. *'Rank our
+suppliers by OTIF and flag any with open regulatory actions'* — that's Fabric IQ. *'Why
+was Summit Dose awarded CALD-201?'* and *'What did BluePeak's GMP inspection find?'* —
+Foundry IQ again, from contracts and quality docs. *'Any weather or carrier disruptions
+this week?'* — Web IQ. Four kinds of context, one conversation.
+
+And now the payoff. *'Reply to Maria's escalation — confirm replacement and credit per
+policy, note the supplier's standing and the disruption, and list the next steps.'* The
+agent composes it and sends it. Let me prove that's real — here's the agent's Outlook,
+and there's the reply, in the thread.
+
+Last thing — and it's the important one. This agent is governed. In the admin center,
+here's its blueprint, and the licenses it needs — including a Frontier license. Here's
+my instance: it needs licenses like I do — E5 and the rest. And I'm the owner and
+manager. It runs autonomously, but it reports to me. That's a context-aware agent you
+can actually put to work."
+
 ## Transcript
 
-_Paste the transcript from the recording here (also lives in the deck speaker notes)._
+_After recording, paste the final timed transcript here (also lives in the deck speaker notes)._
