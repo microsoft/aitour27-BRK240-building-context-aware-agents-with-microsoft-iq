@@ -56,8 +56,8 @@ If you're starting from scratch, do the setup first:
 
 - Ask questions **one at a time** and keep each **single-intent**. Compound
   Fabric questions ("same region *and* an issue") can error — split them.
-- Each demo file has an **Instructions** (click-by-click) section, a **Voice-over
-  script** to read while recording, and a **Transcript** placeholder for the final cut.
+- Each demo file has an **Instructions** (click-by-click) section and a **Transcript**
+  placeholder for the final cut.
 - Recording links go in the table above and in each demo file's header.
 
 ### Code to show on camera (open these in VS Code before recording)
