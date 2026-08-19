@@ -56,6 +56,19 @@ If you're starting from scratch, do the setup first:
 
 - Ask questions **one at a time** and keep each **single-intent**. Compound
   Fabric questions ("same region *and* an issue") can error — split them.
-- Each demo file has an **Instructions** (click-by-click) section and a
-  **Transcript** placeholder — paste the transcript from your recording there.
+- Each demo file has an **Instructions** (click-by-click) section, a **Voice-over
+  script** to read while recording, and a **Transcript** placeholder for the final cut.
 - Recording links go in the table above and in each demo file's header.
+
+### Code to show on camera (open these in VS Code before recording)
+
+Some beats mean switching to the editor, not just clicking in a portal:
+
+| Demo | File to open | What to point at |
+|---|---|---|
+| Demo 1 *(optional)* | `src/agent/responses_protocol.py` | the `/responses` endpoint the Toolkit talks to |
+| **Demo 2** | `src/agent/agent.py` → `_load_iq_tools` | Fabric IQ as one `fabric_dataagent_preview` tool reference |
+| **Demo 2** | `src/agent/instructions.md` | the routing rule: numbers → Fabric IQ, documents → Foundry IQ |
+| Demo 3 *(optional)* | `src/agent/instructions.md` (Email section) | how the agent is told to reply via Work IQ |
+
+Keep the repo open in VS Code alongside the Foundry Toolkit so these switches are quick.
