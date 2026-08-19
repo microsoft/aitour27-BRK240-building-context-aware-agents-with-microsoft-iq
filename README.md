@@ -58,6 +58,7 @@ By the end of this session, you will be able to:
 | Resource | What You'll Get |
 |----------|-----------------|
 | **[Microsoft IQ](https://aka.ms/microsoft-iq)** | The unified intelligence platform for enterprise AI |
+| **[Microsoft IQ Series](https://aka.ms/iq-series)** | Hands-on series going deeper on Foundry IQ, Fabric IQ, Work IQ, and Web IQ |
 | **[Microsoft Learn](https://learn.microsoft.com)** | Official documentation and guided learning paths |
 | **[AI Tour 2027 Resource Center](https://aka.ms/aitour27-resource-center)** | Additional session repos and materials from AI Tour 2027 |
 | **[Microsoft Foundry Community](https://aka.ms/MicrosoftFoundryDiscord-AITour27)** | Connect with other learners and experts in our Discord community |
