@@ -1,0 +1,23 @@
+relationship Supplier
+	fromColumn: SupplierPerformance.SupplierID
+	toColumn: DimSupplier.SupplierID
+
+relationship Date
+	fromColumn: SupplierPerformance.DateKey
+	toColumn: DimDate.DateKey
+
+relationship Location
+	fromColumn: DimSupplier.LocationID
+	toColumn: DimLocation.LocationID
+
+relationship FinancialRating
+	fromColumn: DimSupplier.FinancialStabilityRating
+	toColumn: DimFinancialRating.Rating
+
+relationship InspectionResult
+	fromColumn: SupplierPerformance.LastRegulatoryInspection
+	toColumn: DimInspectionResult.ResultCode
+
+relationship AuditResult
+	fromColumn: SupplierPerformance.LastInternalAuditResult
+	toColumn: DimAuditResult.AuditResult

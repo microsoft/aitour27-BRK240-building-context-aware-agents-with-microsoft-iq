@@ -1,0 +1,29 @@
+table DimLocation
+	sourceLineageTag: [dbo].[DimLocation]
+
+	column LocationID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: LocationID
+
+	column Location
+		dataType: string
+		dataCategory: Place
+		sourceColumn: Location
+
+	column StateOrRegion
+		dataType: string
+		dataCategory: StateOrProvince
+		sourceColumn: StateOrRegion
+
+	column Country
+		dataType: string
+		dataCategory: Country
+		sourceColumn: Country
+
+	partition DimLocation = entity
+		mode: directLake
+		source
+			entityName: DimLocation
+			schemaName: dbo
+			expressionSource: DatabaseQuery

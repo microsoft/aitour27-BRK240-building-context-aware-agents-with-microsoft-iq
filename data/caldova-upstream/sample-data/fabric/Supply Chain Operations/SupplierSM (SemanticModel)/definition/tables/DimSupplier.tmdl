@@ -1,0 +1,61 @@
+/// Canonical supplier identity and static synthetic analytics attributes.
+table DimSupplier
+	sourceLineageTag: [dbo].[DimSupplier]
+
+	measure 'Supplier Count' = DISTINCTCOUNT(DimSupplier[SupplierID])
+		formatString: #,0
+		displayFolder: KPIs
+
+	measure 'Total Available Capacity (K/mo)' = SUM(DimSupplier[AvailableCapacityKPerMonth])
+		formatString: #,0
+		displayFolder: KPIs
+
+	column SupplierID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: SupplierID
+
+	column SupplierName
+		dataType: string
+		sourceColumn: SupplierName
+
+	column ServiceCategory
+		dataType: string
+		sourceColumn: ServiceCategory
+
+	column LocationID
+		dataType: string
+		isHidden
+		summarizeBy: none
+		sourceColumn: LocationID
+
+	column Location
+		dataType: string
+		sourceColumn: Location
+
+	column ExperienceYears
+		dataType: int64
+		sourceColumn: ExperienceYears
+
+	column AvailableCapacityKPerMonth
+		dataType: int64
+		sourceColumn: AvailableCapacityKPerMonth
+
+	column MOQKUnits
+		dataType: int64
+		sourceColumn: MOQKUnits
+
+	column RegulatoryInspections3yr
+		dataType: int64
+		sourceColumn: RegulatoryInspections3yr
+
+	column FinancialStabilityRating
+		dataType: string
+		sourceColumn: FinancialStabilityRating
+
+	partition DimSupplier = entity
+		mode: directLake
+		source
+			entityName: DimSupplier
+			schemaName: dbo
+			expressionSource: DatabaseQuery

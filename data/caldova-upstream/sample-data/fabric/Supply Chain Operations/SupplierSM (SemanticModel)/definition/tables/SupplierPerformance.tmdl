@@ -1,0 +1,130 @@
+/// Synthetic fact table at weekly grain: one row per supplier per snapshot date.
+table SupplierPerformance
+	sourceLineageTag: [dbo].[SupplierPerformance]
+
+	measure 'Avg OTIF %' = AVERAGE(SupplierPerformance[OTIF12moPct])
+		formatString: 0.0%
+		displayFolder: KPIs
+
+	measure 'Avg Batch Rejection %' = AVERAGE(SupplierPerformance[BatchRejectionRatePct])
+		formatString: 0.0%
+		displayFolder: KPIs
+
+	measure 'Avg Right First Time %' = AVERAGE(SupplierPerformance[RightFirstTimePct])
+		formatString: 0.0%
+		displayFolder: KPIs
+
+	measure 'Avg Complaints /1k' = AVERAGE(SupplierPerformance[CustomerComplaintsPer1k])
+		formatString: 0.0
+		displayFolder: KPIs
+
+	measure 'Avg Utilization %' = AVERAGE(SupplierPerformance[CurrentUtilizationPct])
+		formatString: 0.0%
+		displayFolder: KPIs
+
+	measure 'Avg Lead Time (wks)' = AVERAGE(SupplierPerformance[LeadTimeToFirstProductionWks])
+		formatString: 0.0
+		displayFolder: KPIs
+
+	measure 'Avg Cost Index' = AVERAGE(SupplierPerformance[CostIndex])
+		formatString: 0.0
+		displayFolder: KPIs
+
+	measure 'Avg Tech Transfer %' = AVERAGE(SupplierPerformance[TechTransferSuccessPct])
+		formatString: 0.0%
+		displayFolder: KPIs
+
+	measure 'Total Open Reg Actions' = SUM(SupplierPerformance[OpenRegulatoryActions])
+		formatString: #,0
+		displayFolder: KPIs
+
+	measure 'Latest OTIF %' = LASTNONBLANKVALUE(DimDate[Date], AVERAGE(SupplierPerformance[OTIF12moPct]))
+		formatString: 0.0%
+		displayFolder: Trend
+
+	measure 'Latest Batch Rejection %' = LASTNONBLANKVALUE(DimDate[Date], AVERAGE(SupplierPerformance[BatchRejectionRatePct]))
+		formatString: 0.0%
+		displayFolder: Trend
+
+	measure 'Latest Right First Time %' = LASTNONBLANKVALUE(DimDate[Date], AVERAGE(SupplierPerformance[RightFirstTimePct]))
+		formatString: 0.0%
+		displayFolder: Trend
+
+	measure 'Latest Utilization %' = LASTNONBLANKVALUE(DimDate[Date], AVERAGE(SupplierPerformance[CurrentUtilizationPct]))
+		formatString: 0.0%
+		displayFolder: Trend
+
+	measure 'Latest Complaints /1k' = LASTNONBLANKVALUE(DimDate[Date], AVERAGE(SupplierPerformance[CustomerComplaintsPer1k]))
+		formatString: 0.0
+		displayFolder: Trend
+
+	measure 'OTIF % Delta 4 Weeks' = VAR lastDt = MAXX(SupplierPerformance, RELATED(DimDate[Date])) VAR prevDt = lastDt - 28 VAR cur = CALCULATE(AVERAGE(SupplierPerformance[OTIF12moPct]), FILTER(ALL(DimDate), DimDate[Date] = lastDt)) VAR prev = CALCULATE(AVERAGE(SupplierPerformance[OTIF12moPct]), FILTER(ALL(DimDate), DimDate[Date] = prevDt)) RETURN cur - prev
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: Trend
+
+	measure 'Batch Rejection % Delta 4 Weeks' = VAR lastDt = MAXX(SupplierPerformance, RELATED(DimDate[Date])) VAR prevDt = lastDt - 28 VAR cur = CALCULATE(AVERAGE(SupplierPerformance[BatchRejectionRatePct]), FILTER(ALL(DimDate), DimDate[Date] = lastDt)) VAR prev = CALCULATE(AVERAGE(SupplierPerformance[BatchRejectionRatePct]), FILTER(ALL(DimDate), DimDate[Date] = prevDt)) RETURN cur - prev
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: Trend
+
+	column SupplierID
+		dataType: string
+		isHidden
+		summarizeBy: none
+		sourceColumn: SupplierID
+
+	column DateKey
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: DateKey
+
+	column OTIF12moPct
+		dataType: double
+		sourceColumn: OTIF12moPct
+
+	column BatchRejectionRatePct
+		dataType: double
+		sourceColumn: BatchRejectionRatePct
+
+	column RightFirstTimePct
+		dataType: double
+		sourceColumn: RightFirstTimePct
+
+	column CustomerComplaintsPer1k
+		dataType: double
+		sourceColumn: CustomerComplaintsPer1k
+
+	column LastRegulatoryInspection
+		dataType: string
+		sourceColumn: LastRegulatoryInspection
+
+	column OpenRegulatoryActions
+		dataType: int64
+		sourceColumn: OpenRegulatoryActions
+
+	column LastInternalAuditResult
+		dataType: string
+		sourceColumn: LastInternalAuditResult
+
+	column CurrentUtilizationPct
+		dataType: double
+		sourceColumn: CurrentUtilizationPct
+
+	column LeadTimeToFirstProductionWks
+		dataType: int64
+		sourceColumn: LeadTimeToFirstProductionWks
+
+	column CostIndex
+		dataType: int64
+		sourceColumn: CostIndex
+
+	column TechTransferSuccessPct
+		dataType: double
+		sourceColumn: TechTransferSuccessPct
+
+	partition SupplierPerformance = entity
+		mode: directLake
+		source
+			entityName: SupplierPerformance
+			schemaName: dbo
+			expressionSource: DatabaseQuery
