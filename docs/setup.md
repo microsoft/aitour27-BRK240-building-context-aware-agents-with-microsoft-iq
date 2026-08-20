@@ -57,7 +57,7 @@ and surfaced as env vars in `.env.example`.
 |-------------|-----|
 | [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) | Provisions Foundry + deploys the hosted agent (`azd up`) |
 | [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) | Auth + the `infra/a365` and seeding scripts (ACR builds in the cloud — no local Docker) |
-| [Python 3.11+](https://www.python.org/downloads/) | Runs the Foundry IQ + ontology seed scripts |
+| [Python 3.11+](https://www.python.org/downloads/) | Runs the Foundry IQ seed scripts |
 | [uv](https://docs.astral.sh/uv/) | Runs the Fabric provision scripts (`data/caldova-upstream/provision`) |
 
 ### Azure resources you must have **before** you start
@@ -100,15 +100,15 @@ and manual (✋):
 | 2 | `az login` + `azd auth login` | ✋ |
 | 3 | Set seeding inputs: `azd env set SEED_IQ_ON_PROVISION 1`, `TENANT_ID`, `FABRIC_WORKSPACE_ID`, `AZURE_AI_SEARCH_SERVICE_ENDPOINT`, `WEB_IQ_API_KEY` | ✋ |
 | 4 | `azd up` — provisions Foundry + ACR, seeds all four IQs, registers connections, builds + deploys the agent | ⚙️ |
-| 5 | **Publish the Fabric ontology**: open `CaldovaSupplierOntology` in Fabric → **Publish** → add it to `SupplierDataAgent` (preview: portal-only) | ✋ |
-| 6 | `./infra/a365/publish-autopilot.ps1` — registers the agent in Agent 365 | ⚙️ |
-| 7 | **Approve the agent blueprint** in the Microsoft 365 admin center | ✋ |
-| 8 | **Set the Bot ID** in the Teams Developer Portal | ✋ |
-| 9 | **Hire an instance** in Teams (Apps → Agents for your team) | ✋ |
+| 5 | `./infra/a365/publish-autopilot.ps1` — registers the agent in Agent 365 | ⚙️ |
+| 6 | **Approve the agent blueprint** in the Microsoft 365 admin center | ✋ |
+| 7 | **Set the Bot ID** in the Teams Developer Portal | ✋ |
+| 8 | **Hire an instance** in Teams (Apps → Agents for your team) | ✋ |
 
-Steps 1, 5, 7, 8, 9 are manual — steps 5/7/8/9 are inherent to Fabric IQ preview and the
-Agent 365 governance model (admin approval + licensed hire), not gaps in this repo. The
-detailed walkthrough for each step follows.
+Steps 1, 6, 7, 8 are manual — steps 6/7/8 are inherent to the Agent 365 governance model
+(admin approval + licensed hire), not gaps in this repo. The Fabric IQ ontology needs no
+manual portal step; it is created and attached to `SupplierDataAgent` by the seeding
+flow (see [ontology.md](ontology.md)). The detailed walkthrough for each step follows.
 
 ### Step 1: Authenticate
 
@@ -161,8 +161,8 @@ azd up
 
 > Not seeding during provision? Leave `SEED_IQ_ON_PROVISION` unset and run
 > `./infra/scripts/seed-and-connect.ps1 -SetAzdEnv` yourself after `azd provision`.
-> Either way, after deploy, **publish the Fabric ontology** (portal — see
-> [supplier-ontology.md](supplier-ontology.md)) so the graph is query-ready.
+> Either way the Fabric IQ ontology is created and attached automatically — see
+> [ontology.md](ontology.md).
 
 After deployment completes, retrieve your resource values:
 
@@ -175,7 +175,7 @@ azd env get-values
 > the publish request, so the blueprint shows up as a **pending request** in the
 > M365 admin center. You must approve it, set the Bot ID in the Teams Developer
 > Portal, and create an instance before it is usable — see below and
-> [infra/a365/README.md](./infra/a365/README.md).
+> [infra/a365/README.md](../infra/a365/README.md).
 
 ### Step 3: Approve the Agent Blueprint
 
@@ -244,7 +244,7 @@ channel. This runs **after** deploy because the blueprint id doesn't exist until
 `infra/a365/publish-digital-worker.ps1` publishes the agent to Microsoft 365 as a hireable digital
 worker, then the OAuth2 grants + blueprint-owner scripts finish the setup.
 
-> **⚠️ Important:** The agent requires [admin approval](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/review-admin-consent-requests#review-and-take-action-on-admin-consent-requests-1) before becoming available for hiring. See [infra/a365/README.md](./infra/a365/README.md).
+> **⚠️ Important:** The agent requires [admin approval](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/review-admin-consent-requests#review-and-take-action-on-admin-consent-requests-1) before becoming available for hiring. See [infra/a365/README.md](../infra/a365/README.md).
 
 ---
 

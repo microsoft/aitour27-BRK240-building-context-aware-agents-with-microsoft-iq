@@ -1,0 +1,73 @@
+### Test the Caldova Supply Autopilot over the Responses protocol
+#
+# Prereqs:
+#   1. VS Code REST Client extension (humao.rest-client)
+#   2. azd auth login (or az login)
+#   3. Fill in @endpoint from your deployment:
+#        azd env get-values | Select-String AZURE_AI_PROJECT_ENDPOINT
+#   4. Get a token and paste it into @token below:
+#        az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv
+#
+# Hosted agents can ONLY be called through the agent endpoint path used below —
+# posting to {project}/openai/responses returns HTTP 400 telling you the correct path.
+
+@endpoint = https://<your-account>.services.ai.azure.com/api/projects/<your-project>
+@agent = caldova-supply-autopilot
+@apiVersion = 2025-11-15-preview
+@token = PASTE_TOKEN_HERE
+
+### 1. Inspect the agent — shows BOTH protocols are registered
+GET {{endpoint}}/agents/{{agent}}?api-version={{apiVersion}}
+Authorization: Bearer {{token}}
+Foundry-Features: HostedAgents=V1Preview,AgentEndpoints=V1Preview
+
+# Look for:
+#   "protocols": [ "activity", "responses" ]
+#   "authorization_schemes": [ { "type": "Entra" }, { "type": "BotServiceRbac" } ]
+
+
+### 2. Web IQ — works under app identity ✅
+POST {{endpoint}}/agents/{{agent}}/endpoint/protocols/openai/responses?api-version={{apiVersion}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "input": "Any weather or carrier disruptions this week that could affect cold-chain shipments?",
+  "stream": false
+}
+
+
+### 3. Foundry IQ — works under app identity ✅
+POST {{endpoint}}/agents/{{agent}}/endpoint/protocols/openai/responses?api-version={{apiVersion}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "input": "Is a major cold-chain excursion eligible for replacement and credit?",
+  "stream": false
+}
+
+
+### 4. Work IQ — does NOT resolve here ❌ (needs user-delegated OBO, i.e. Teams)
+POST {{endpoint}}/agents/{{agent}}/endpoint/protocols/openai/responses?api-version={{apiVersion}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "input": "Any urgent supply escalations in your mailbox?",
+  "stream": false
+}
+
+# Expected: "I'm not able to directly access your mailbox in this chat."
+# This is the demo beat — same agent, same code, different identity.
+
+
+### 5. Streaming variant (set stream: true to watch SSE deltas)
+POST {{endpoint}}/agents/{{agent}}/endpoint/protocols/openai/responses?api-version={{apiVersion}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "input": "Why was Summit Dose awarded CALD-201?",
+  "stream": true
+}

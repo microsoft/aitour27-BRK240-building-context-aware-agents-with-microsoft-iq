@@ -18,9 +18,10 @@ plus **automated seeding** so anyone can replicate the demo.
 
 Seeding pulls the Caldova supplier corpus (see [`../data/README.md`](../data/README.md)) and builds:
 
-- **Fabric IQ** — provisions the `CaldovaSupplierAnalytics` lakehouse, `SupplierSM` semantic
-  model, `Supplier Performance` report, and `SupplierDataAgent` from the official dataset, then
-  creates the `CaldovaSupplierOntology` graph.
+- **Fabric IQ** — provisions the `CaldovaSupplierAnalytics` lakehouse (14 Delta tables), the
+  `CaldovaMedicinalProductOntology` ontology, the `SupplierSM` semantic model, the
+  `Supplier Performance` report, and `SupplierDataAgent` — all from the official dataset.
+  The Data Agent is attached to **both** `SupplierSM` and the ontology.
 - **Foundry IQ** — builds the `caldova-supply-kb` knowledge base with four sources: **policies**,
   **procurement**, **quality**, and **cold-chain**.
 - **Web IQ + Work IQ** — connection references only (no data to seed).
@@ -31,12 +32,12 @@ The seed data lives in [`../data`](../data). The scripts under `scripts/` build 
 
 | Script | What it does |
 |:---|:---|
-| `../data/caldova-upstream/provision/fabric/*.py` | Provision Fabric IQ: `create_fabric_lakehouse` → `create_fabric_semantic_model` → `create_fabric_reports` → `create_fabric_data_agent` (`uv`-based). |
-| `create-supplier-ontology.py` | Creates the `CaldovaSupplierOntology` graph structure over `SupplierSM`. One manual **Publish** in the Fabric portal remains (preview) — see [`../docs/supplier-ontology.md`](../docs/supplier-ontology.md). |
+| `../data/caldova-upstream/provision/fabric/*.py` | Provision Fabric IQ in dependency order: `create_fabric_lakehouse` → `create_fabric_ontology` → `create_fabric_semantic_model` → `create_fabric_reports` → `create_fabric_data_agent` (`uv`-based). The ontology must precede the Data Agent, which needs `FABRIC_ONTOLOGY_ID`. |
+| `refresh-ontology-graph.py` | Builds (refreshes) the ontology graph after `create_fabric_ontology.py`. Without it the graph is empty and the Data Agent reports the graph model as unavailable. Idempotent — see [`../docs/ontology.md`](../docs/ontology.md). |
 | `seed-foundryiq.py` | Creates the Azure AI Search index over `data/knowledge-base/*.md`, uploads the policy chunks, and creates the `caldova-supply-kb` knowledge base (agentic retrieval + answer synthesis). |
 | `seed-foundryiq-docs.py` | Builds the **procurement / quality / cold-chain** document knowledge sources from the `caldova-upstream` PDFs/JSON and attaches them to `caldova-supply-kb`. |
 | `seed-connections.ps1` | Registers the Foundry project connections (Foundry IQ KB, `SupplierDataAgent`, Work IQ, optional Web IQ). Returns the connection resource ids; `-SetAzdEnv` also persists them to the azd env. |
-| `seed.ps1` | Orchestrator that runs all data seeders (Fabric + ontology + Foundry IQ). |
+| `seed.ps1` | Orchestrator that runs all data seeders (the five Fabric provision scripts + Foundry IQ). |
 | `seed-and-connect.ps1` | End-to-end: runs `seed.ps1`, discovers the `SupplierDataAgent` GUID by name, then registers all four project connections. Reads its inputs from the azd env; `-SetAzdEnv` writes the connection ids back so `azd up` bakes them into the agent. |
 
 ```powershell
@@ -97,7 +98,6 @@ pip install -r infra/scripts/seed-requirements.txt   # + uv
 ./infra/scripts/seed-and-connect.ps1 -SetAzdEnv [-WebIqApiKey <key>]
 ```
 
-> One manual step remains for the ontology (preview): after seeding, open
-> `CaldovaSupplierOntology` in the Fabric portal, **Publish** it, and add it as a
-> `SupplierDataAgent` data source. See [`../docs/supplier-ontology.md`](../docs/supplier-ontology.md).
-> The demo works without it — `SupplierSM` already answers the relationship questions.
+> The Fabric IQ ontology needs no manual portal step: `create_fabric_ontology.py` creates
+> `CaldovaMedicinalProductOntology` and `create_fabric_data_agent.py` attaches it to
+> `SupplierDataAgent` alongside `SupplierSM`. See [`../docs/ontology.md`](../docs/ontology.md).

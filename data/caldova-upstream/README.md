@@ -3,12 +3,14 @@
 Reusable fictional pharmaceutical procurement, supplier, quality, logistics,
 and operations data for demos, prototypes, and retrieval experiments.
 
+See [sample questions](questions.md) for prompts spanning indexed documents,
+Fabric analytics, the medicinal-product ontology, and federated work context.
+
 The [sample-data](sample-data) contains data you can copy into your repository. It contains:
 
-- [pdfs](sample-data/pdfs) - 37 finished documents in one flat directory;
-- [json](sample-data/json) - 8 structured scenario and analytics datasets; and
-- [fabric](sample-data/fabric) - the supplier semantic model and report
-  definitions.
+* [pdfs](sample-data/pdfs): 37 finished documents in one flat directory
+* [json](sample-data/json): 10 structured scenario and analytics datasets
+* [fabric](sample-data/fabric): the supplier semantic model and report definitions
 
 If you need to create Fabric objects or generate new data, see workflow instructions.
 
@@ -16,7 +18,9 @@ If you need to create Fabric objects or generate new data, see workflow instruct
 
 - [PDF documents](#pdf-documents)
 - [JSON datasets](#json-datasets)
-- [Fabric definitions](#fabric-definitions)
+- [Fabric IQ semantic models](#fabric-iq-semantic-models)
+- [Fabric IQ ontology](#fabric-iq-ontology)
+- [Sample questions](questions.md)
 - [Optional workflows](#optional-workflows)
 
 ## PDF documents
@@ -96,7 +100,8 @@ The structured datasets are stored in [sample-data/json](sample-data/json).
 
 | JSON | Contents |
 | --- | --- |
-| [waypoint-supplier-invoices.json](sample-data/json/waypoint-supplier-invoices.json) | Canonical supplier identities, invoices, line items, billing profiles, and document metadata. |
+| [suppliers.json](sample-data/json/suppliers.json) | Canonical identities, service categories, and locations for 18 suppliers; suppliers do not need to have invoices. |
+| [waypoint-supplier-invoices.json](sample-data/json/waypoint-supplier-invoices.json) | Invoices, line items, billing profiles, and document metadata for 15 suppliers. |
 | [valence-excursion.json](sample-data/json/valence-excursion.json) | Temperature readings, excursion details, inventory, assessment, and shipment references. |
 | [supplier-evidence.json](sample-data/json/supplier-evidence.json) | Operational evidence and assessment packets for Meridian, Keystone, and BluePeak. |
 | [caldova-purchasing-policy.json](sample-data/json/caldova-purchasing-policy.json) | Purchasing-policy structure, controls, roles, thresholds, and scorecard. |
@@ -104,8 +109,9 @@ The structured datasets are stored in [sample-data/json](sample-data/json).
 | [GMP-INS-BPB-2027-01.json](sample-data/json/GMP-INS-BPB-2027-01.json) | Structured GMP inspection, findings, attachments, and CAPA data. |
 | [procurement-chain.json](sample-data/json/procurement-chain.json) | RFP, bidder responses, agreements, amendment, and purchase-order data. |
 | [supplier-kpi-profiles.json](sample-data/json/supplier-kpi-profiles.json) | Synthetic supplier KPI profiles used by the Fabric analytics model. |
+| [medicinal-product-ontology.json](sample-data/json/medicinal-product-ontology.json) | Medicinal products, active substances, regulatory agencies, marketing authorizations, and ontology relationships. |
 
-## Fabric definitions
+## Fabric IQ semantic models
 
 [sample-data/fabric](sample-data/fabric) contains the `SupplierSM` semantic model
 and `Supplier Performance` report definitions. See the
@@ -123,13 +129,28 @@ The semantic models include these tables:
 | [DimAuditResult](sample-data/fabric/Supply%20Chain%20Operations/SupplierSM%20%28SemanticModel%29/definition/tables/DimAuditResult.tmdl) | One row per internal audit result. | Result rank and passing status. |
 | [DimFinancialRating](sample-data/fabric/Supply%20Chain%20Operations/SupplierSM%20%28SemanticModel%29/definition/tables/DimFinancialRating.tmdl) | One row per financial stability rating. | Rating rank and investment-grade status. |
 
+## Fabric IQ ontology
+
+The `CaldovaMedicinalProductOntology` models five entity types:
+
+- `MedicinalProduct`
+- `ActiveSubstance`
+- `Manufacturer`
+- `MarketingAuthorization`
+- `RegulatoryAgency`
+
+It connects them through `contains`, `manufactures`, `hasAuthorization`, and
+`issuedBy` relationships. The ontology is bound to seven dedicated Delta tables in
+the `CaldovaSupplierAnalytics` lakehouse. See the
+[Fabric provisioning guide](provision/fabric/README.md) to validate and deploy it.
+
 ## Optional workflows
 
 - [generation](generation) contains the scenario-first templates, assets, HTML
   previews, and scripts used to reproduce the PDFs. Its
   [data guide](generation/README.md) documents provenance and public references.
 - [Fabric provisioning](provision/fabric/README.md) contains scripts and setup
-  instructions for creating or updating Fabric resources using the definitions
-  and JSON under `sample-data/`.
+  instructions for creating or updating the lakehouse, ontology, semantic model,
+  report, and Data Agent using the definitions and JSON under `sample-data/`.
 
 Both workflows use the root [pyproject.toml](pyproject.toml) and `uv.lock`.

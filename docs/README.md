@@ -5,7 +5,7 @@ Explanatory and reference material for this session.
 | Doc | What's inside |
 |:---|:---|
 | [`setup.md`](setup.md) | Full deploy + Agent 365 registration reference: prerequisites, region availability, provision/seed/deploy, blueprint approval, Teams hire, and the identity/OBO model. |
-| [`supplier-ontology.md`](supplier-ontology.md) | How the Fabric IQ ontology over the supplier data is built and why it's reproducible (with the one preview-only portal step). |
+| [`ontology.md`](ontology.md) | How the Fabric IQ ontology (`CaldovaMedicinalProductOntology`) is built from the upstream Caldova dataset, and how it combines with `SupplierSM` in the Data Agent. |
 
 See also:
 
