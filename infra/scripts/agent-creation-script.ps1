@@ -74,6 +74,20 @@
       }
       # NOTE: blueprint_reference intentionally OMITTED — the platform auto-creates
       # the agent identity blueprint + instance identity on first version-create.
+      #
+      # FORWARD-LOOKING: Azure/azure-rest-api-specs#45588 adds an optional
+      # `capabilities` array to CreateAgentVersionRequest, with "DigitalWorker" as its
+      # only value today. When that ships, this autopilot should declare:
+      #     capabilities = @("DigitalWorker")
+      # as a sibling of `definition` / `description` / `agent_endpoint` below.
+      # Two gotchas:
+      #   1. It is CREATE-TIME ONLY — the spec omits `capabilities` from
+      #      UpdateAgentRequest, so it cannot be PATCHed on later (unlike the endpoint
+      #      protocols in a365/enable-activity-protocol.ps1). Adding it requires a NEW
+      #      agent version, which rolls @latest and forces a Teams re-hire.
+      #   2. Not yet available: the PR targets `feature/foundry-release`, and
+      #      api-version 2025-11-15-preview returns no `capabilities` field on either
+      #      the agent or the version, so sending it now is rejected.
   }
 
   # On pass 2 the caller sets AGENT_BLUEPRINT_CLIENT_ID so we pin the CONNECTIONS
