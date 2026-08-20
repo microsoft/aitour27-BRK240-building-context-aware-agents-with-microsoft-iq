@@ -55,7 +55,7 @@ that acts end to end under enterprise governance.
    | 3 | Rank suppliers by OTIF and flag any with open regulatory actions. | Fabric IQ |
    | 4 | Why was Summit Dose awarded CALD-201? | Foundry IQ (procurement) |
    | 5 | What did BluePeak's GMP inspection find? | Foundry IQ (quality) |
-   | 6 | Which active substances have only one approved manufacturer? | Fabric IQ (ontology) |
+   | 6 | Which medicinal products depend on active substances made by Rheinwerk Pharma Ingredients? | Fabric IQ (ontology) |
    | 7 | Any weather or carrier disruptions this week that could affect cold-chain shipments? | Web IQ |
    | 8 | Reply to Maria's escalation: confirm replacement + credit per policy, note the supplier's standing and the disruption, and list next steps. | Work IQ (reply) |
 
@@ -79,7 +79,9 @@ that acts end to end under enterprise governance.
 ## Questions used
 
 See the table in Part B. Ask one at a time, single-intent. Keep Maria's email unread
-until step 1. For step 6 (relationships), don't combine two conditions in one ask.
+until step 1. For step 6 (the ontology traversal), **name the manufacturer** rather than
+asking a superlative or a reverse lookup — see the "phrasings to avoid" table in
+[demo 2](demo-02-fabric-iq.md#phrasings-to-avoid-on-stage) for what degrades and why.
 
 ## Expected result
 

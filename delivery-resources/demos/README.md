@@ -42,9 +42,9 @@ If you're starting from scratch, do the setup first:
 ## Global pre-demo checklist (T-10 min)
 
 - [ ] Agent is on the intended version (currently **v29**, `@latest`).
-- [ ] **Warm up Fabric IQ — both sources**: ask one OTIF question *and* one ontology
-      question ("Which active substances have only one approved manufacturer?") so
-      neither cold-starts on stage.
+- [ ] **Warm up Fabric IQ — both sources**: ask one OTIF question and one ontology
+      question ("Which medicinal products depend on active substances made by
+      Rheinwerk Pharma Ingredients?") so neither cold-starts on stage.
 - [ ] All four IQ connections healthy: Web IQ, Foundry IQ (`caldova-supply-kb`),
       Fabric IQ (`caldova-supply-dataagent` → `SupplierDataAgent`, attached to both
       `SupplierSM` and `CaldovaMedicinalProductOntology`), Work IQ.
@@ -74,3 +74,5 @@ Some beats mean switching to the editor, not just clicking in a portal:
 | Demo 3 *(optional)* | `src/agent/instructions.md` (Email section) | how the agent is told to reply via Work IQ |
 
 Keep the repo open in VS Code alongside the Foundry Toolkit so these switches are quick.
+
+

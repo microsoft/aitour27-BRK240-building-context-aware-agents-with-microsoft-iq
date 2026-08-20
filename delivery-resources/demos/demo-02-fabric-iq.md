@@ -62,15 +62,19 @@ Data Agent), then show the agent's code and instructions that connect to it.
 
 6. Show the ranked list over the real model. Then an **ontology** question:
 
-   > Which active substances have only one approved manufacturer?
+   > Which medicinal products depend on active substances made by Rheinwerk Pharma Ingredients?
+
+   Two hops through the graph — manufacturer → substance → product — which the
+   semantic model has no path for.
 
 7. Finally, the one that needs **both sources** — the payoff of this demo:
 
-   > Which approved API manufacturers have available capacity and no open regulatory
-   > actions, and which medicinal products depend on their active substances?
+   > What is Rheinwerk Pharma Ingredients' latest OTIF, and which medicinal products
+   > depend on the active substances it makes?
 
-   Capacity and regulatory actions come from `SupplierSM`; manufacturer → substance →
-   product comes from the ontology. Point out that one question spanned both.
+   OTIF comes from `SupplierSM`; substance → product comes from the ontology; they join
+   on `Manufacturer.manufacturerId` ↔ `DimSupplier.SupplierID`. Point out that one
+   question spanned both.
 
 ### Part C — how the agent wires to it (code)
 
@@ -88,35 +92,58 @@ Data Agent), then show the agent's code and instructions that connect to it.
 
 ## Questions used
 
-| Ask | Source | Notes |
-|---|---|---|
-| Rank all suppliers by latest OTIF and flag any with open regulatory actions. | `SupplierSM` (DAX) | Ranked list over the live model |
-| Which active substances have only one approved manufacturer? | Ontology (GQL) | Graph traversal the semantic model can't do |
-| Which approved API manufacturers have available capacity and no open regulatory actions, and which medicinal products depend on their active substances? | **Both** | Joins on `Manufacturer.manufacturerId` ↔ `DimSupplier.SupplierID` |
-| (optional) Which medicinal products contain a given active substance? | Ontology (GQL) | Simple one-hop traversal |
+Each of these was run repeatedly against the live Data Agent; the **Reliability** column
+is how often it returned a correct, well-formed answer.
 
-> Keep each question single-intent, except the deliberate cross-source one above —
-> that one is *supposed* to span both sources, and it's the point of the demo. If the
-> Data Agent errors on it, fall back to asking the two halves separately.
+| Ask | Source | Reliability |
+|---|---|---|
+| Rank all suppliers by latest OTIF and flag any with open regulatory actions. | `SupplierSM` (DAX) | 4/4 |
+| Which medicinal products contain Caldovexine? | Ontology (GQL) | 4/4 — simplest one-hop |
+| Which medicinal products depend on active substances made by Rheinwerk Pharma Ingredients? | Ontology (GQL) | 4/4 — two hops |
+| What is Rheinwerk Pharma Ingredients' latest OTIF, and which medicinal products depend on the active substances it makes? | **Both** | 2/2 joined correctly |
+
+### Phrasings to avoid on stage
+
+Verified flaky — keep them out of the run of show:
+
+| Ask | Problem |
+|---|---|
+| *Which active substances have only one approved manufacturer?* | **Returns a wrong answer.** Caldovexine has **two** approved makers (Meridian + Rheinwerk) but is often listed anyway. The correct set is Neravalate, Immunarin, Respivanol, Dermalunide, Glycoride. Rephrasing as *"count how many manufacturers with approval status 'Approved' make each substance, and list those where the count is exactly 1"* fixes the answer but still fails ~1 in 4 with a query syntax error. |
+| *Which manufacturers make Glycoride?* | 1/4. The `manufactures` relationship is directed **Manufacturer → ActiveSubstance**; asking substance → manufacturer traverses it backwards and usually returns "no manufacturers found". Ask it in the forward direction instead. |
+| *Which API manufacturer has the lowest latest OTIF, and which products depend on it?* | 1/2. Superlative + traversal in one ask; name the manufacturer instead. |
+| *Which approved API manufacturers have available capacity and no open regulatory actions, and which medicinal products depend on their active substances?* | Three predicates plus a traversal. Works in isolation but dropped the product mapping when run through the agent in Teams. |
+
+> Rule of thumb: **name the entity, and traverse in the direction the relationship is
+> defined.** Superlatives and stacked filters are where it degrades.
 
 ## Verified answers (from live runs)
 
-Actual responses from `SupplierDataAgent` after provisioning — use them to sanity-check
-the environment before recording. The Data Agent's natural-language layer rephrases
-between runs, so treat these as *shape and substance*, not exact strings.
+Actual responses from `SupplierDataAgent`, used to sanity-check the environment before
+recording. The natural-language layer rephrases between runs, so treat these as *shape
+and substance*, not exact strings.
 
-- *Which active substances have only one approved manufacturer?* → single-source
-  substances including **Neravalate** and **Respivanol** (NovaCura API Sciences),
-  **Glycoride** and **Immunarin** (Rheinwerk Pharma Ingredients), and **Dermalunide**
-  (Meridian API Works). Caldovexine is the one dual-sourced substance, so it may or may
-  not appear depending on how the run interprets "only one".
 - *Rank all suppliers by latest OTIF…* → 18 suppliers, **Summit Dose 98.5%** top,
   **BluePeak 88.4%** bottom, none with open regulatory actions.
-- *Which approved API manufacturers have available capacity…* → **Meridian API Works**
-  (310k/mo) → Caldovexine → *Caldovex*; **NovaCura API Sciences** (280k/mo) →
-  Neravalate → *Neraval*, Respivanol → *Respivane*; **Rheinwerk Pharma Ingredients**
-  (240k/mo) → Glycoride → *Glycora Duo*, Immunarin → *Immunara*; **Pacifica Active
-  Ingredients** (360k/mo, no substances listed).
+- *Which medicinal products contain Caldovexine?* → **Caldovex** (CALD-201, tablet, 50 mg, oral).
+- *Which medicinal products depend on … Rheinwerk Pharma Ingredients?* → **Immunara**
+  (Immunarin), **Caldovex** (Caldovexine), **Glycora Duo** (Glycoride).
+- *What is Rheinwerk's latest OTIF, and which products depend on it?* → **96.2%** plus
+  those same three products.
+
+### Ground truth (for checking answers)
+
+| Manufacturer | Approval | Makes |
+|---|---|---|
+| Meridian API Works | Approved | Caldovexine, Dermalunide |
+| NovaCura API Sciences | Approved | Neravalate, Respivanol |
+| Rheinwerk Pharma Ingredients | Approved | Caldovexine, Immunarin, Glycoride |
+| Pacifica Active Ingredients | **Conditional** | Respivanol, Dermalunide, Metabex |
+
+Products: Neraval = Neravalate · Caldovex = Caldovexine · Immunara = Immunarin ·
+Respivane = Respivanol · Dermalune = Dermalunide · **Glycora Duo = Glycoride + Metabex**.
+
+Note Pacifica is *Conditional*, not Approved — that's what makes Respivanol and
+Dermalunide single-**approved**-source, and why Metabex has no approved manufacturer.
 
 > If an ontology question instead returns *"the graph model required to answer this
 > query is currently unavailable"*, the graph needs rebuilding — run
