@@ -6,6 +6,7 @@ import io
 import json
 import os
 import re
+import time
 import warnings
 from collections import Counter
 from datetime import date, timedelta
@@ -29,8 +30,10 @@ from microsoft_fabric_api.generated.lakehouse.models import (  # noqa: E402
 
 REPO_ROOT = Path(__file__).parents[2]
 ENV_PATH = REPO_ROOT / ".env"
-IDENTITY_PATH = REPO_ROOT / "sample-data/json/waypoint-supplier-invoices.json"
+SUPPLIER_PATH = REPO_ROOT / "sample-data/json/suppliers.json"
+INVOICE_PATH = REPO_ROOT / "sample-data/json/waypoint-supplier-invoices.json"
 PROFILE_PATH = REPO_ROOT / "sample-data/json/supplier-kpi-profiles.json"
+ONTOLOGY_DATA_PATH = REPO_ROOT / "sample-data/json/medicinal-product-ontology.json"
 ONELAKE_DFS_URL = "https://onelake.dfs.fabric.microsoft.com"
 PORTAL_BASE_URL = "https://msit.powerbi.com"
 LAKEHOUSE_NAME = "CaldovaSupplierAnalytics"
@@ -127,6 +130,61 @@ TABLE_SCHEMAS = {
             pa.field("InvestmentGrade", pa.string()),
         ]
     ),
+    "MedicinalProduct": pa.schema(
+        [
+            pa.field("ProductID", pa.string(), nullable=False),
+            pa.field("Name", pa.string()),
+            pa.field("DosageForm", pa.string()),
+            pa.field("Strength", pa.string()),
+            pa.field("RouteOfAdministration", pa.string()),
+        ]
+    ),
+    "ActiveSubstance": pa.schema(
+        [
+            pa.field("SubstanceID", pa.string(), nullable=False),
+            pa.field("PreferredName", pa.string()),
+            pa.field("SubstanceType", pa.string()),
+        ]
+    ),
+    "Manufacturer": pa.schema(
+        [
+            pa.field("ManufacturerID", pa.string(), nullable=False),
+            pa.field("Name", pa.string()),
+            pa.field("Country", pa.string()),
+            pa.field("ApprovalStatus", pa.string()),
+        ]
+    ),
+    "MarketingAuthorization": pa.schema(
+        [
+            pa.field("AuthorizationID", pa.string(), nullable=False),
+            pa.field("AuthorizationNumber", pa.string()),
+            pa.field("ProductID", pa.string(), nullable=False),
+            pa.field("AgencyID", pa.string(), nullable=False),
+            pa.field("Market", pa.string()),
+            pa.field("Status", pa.string()),
+            pa.field("EffectiveDate", pa.date32()),
+        ]
+    ),
+    "RegulatoryAgency": pa.schema(
+        [
+            pa.field("AgencyID", pa.string(), nullable=False),
+            pa.field("Name", pa.string()),
+            pa.field("Abbreviation", pa.string()),
+            pa.field("CountryOrRegion", pa.string()),
+        ]
+    ),
+    "ProductActiveSubstance": pa.schema(
+        [
+            pa.field("ProductID", pa.string(), nullable=False),
+            pa.field("SubstanceID", pa.string(), nullable=False),
+        ]
+    ),
+    "ManufacturerActiveSubstance": pa.schema(
+        [
+            pa.field("ManufacturerID", pa.string(), nullable=False),
+            pa.field("SubstanceID", pa.string(), nullable=False),
+        ]
+    ),
 }
 
 
@@ -151,24 +209,24 @@ def bounded(value: float | None, lower: float, upper: float) -> float | None:
     return round(min(upper, max(lower, value)), 5)
 
 
-def canonical_suppliers() -> list[dict[str, str]]:
-    """Read canonical supplier identity and billing locations from Waypoint JSON."""
-    source = json.loads(IDENTITY_PATH.read_text())
-    invoices = {row["supplier_id"]: row for row in source["invoices"]}
-    billing = {
-        row["supplier_id"]: row["billing_profile"]["address_lines"]
-        for row in source["document_generation"]["profiles"]
+def canonical_suppliers() -> list[dict[str, Any]]:
+    """Read and validate the canonical supplier registry."""
+    suppliers = json.loads(SUPPLIER_PATH.read_text())["suppliers"]
+    supplier_ids = [row["supplier_id"] for row in suppliers]
+    if len(supplier_ids) != len(set(supplier_ids)):
+        raise ValueError("Canonical supplier IDs must be unique.")
+
+    invoice_source = json.loads(INVOICE_PATH.read_text())
+    invoice_ids = {row["supplier_id"] for row in invoice_source["invoices"]}
+    document_profile_ids = {
+        row["supplier_id"] for row in invoice_source["document_generation"]["profiles"]
     }
-    if set(invoices) != set(billing):
+    if invoice_ids != document_profile_ids:
         raise ValueError("Invoice and billing-profile supplier sets differ.")
-    return [
-        {
-            "supplier_id": supplier_id,
-            "supplier_name": invoices[supplier_id]["supplier_name"],
-            "address_lines": billing[supplier_id],
-        }
-        for supplier_id in sorted(invoices)
-    ]
+    unknown_invoice_ids = invoice_ids - set(supplier_ids)
+    if unknown_invoice_ids:
+        raise ValueError(f"Invoices reference unknown suppliers: {sorted(unknown_invoice_ids)}")
+    return sorted(suppliers, key=lambda row: row["supplier_id"])
 
 
 def normalize_location(address_lines: list[str]) -> tuple[str, str, str]:
@@ -197,8 +255,8 @@ def profile_data() -> dict[str, dict[str, Any]]:
         raise ValueError("Profile history end date does not match the generator contract.")
     if payload["snapshot_weeks"] != SNAPSHOT_WEEKS:
         raise ValueError("Profile snapshot count does not match the generator contract.")
-    if len(profiles) != 15 or len(set(profile_ids)) != 15:
-        raise ValueError("Synthetic profiles must contain 15 unique suppliers.")
+    if len(profile_ids) != len(set(profile_ids)):
+        raise ValueError("Synthetic profile supplier IDs must be unique.")
     return {row["supplier_id"]: row for row in profiles}
 
 
@@ -301,14 +359,137 @@ def performance_rows(
     return rows
 
 
+def ontology_rows(
+    suppliers: list[dict[str, Any]], profiles: dict[str, dict[str, Any]]
+) -> dict[str, list[dict[str, Any]]]:
+    """Build ontology entity and relationship rows with endpoint validation."""
+    source = json.loads(ONTOLOGY_DATA_PATH.read_text())
+    supplier_by_id = {row["supplier_id"]: row for row in suppliers}
+
+    products = [
+        {
+            "ProductID": row["product_id"],
+            "Name": row["name"],
+            "DosageForm": row["dosage_form"],
+            "Strength": row["strength"],
+            "RouteOfAdministration": row["route_of_administration"],
+        }
+        for row in source["medicinal_products"]
+    ]
+    substances = [
+        {
+            "SubstanceID": row["substance_id"],
+            "PreferredName": row["preferred_name"],
+            "SubstanceType": row["substance_type"],
+        }
+        for row in source["active_substances"]
+    ]
+    agencies = [
+        {
+            "AgencyID": row["agency_id"],
+            "Name": row["name"],
+            "Abbreviation": row["abbreviation"],
+            "CountryOrRegion": row["country_or_region"],
+        }
+        for row in source["regulatory_agencies"]
+    ]
+    authorizations = [
+        {
+            "AuthorizationID": row["authorization_id"],
+            "AuthorizationNumber": row["authorization_number"],
+            "ProductID": row["product_id"],
+            "AgencyID": row["agency_id"],
+            "Market": row["market"],
+            "Status": row["status"],
+            "EffectiveDate": (
+                date.fromisoformat(row["effective_date"])
+                if row["effective_date"]
+                else None
+            ),
+        }
+        for row in source["marketing_authorizations"]
+    ]
+    product_substances = [
+        {"ProductID": row["product_id"], "SubstanceID": row["substance_id"]}
+        for row in source["product_active_substances"]
+    ]
+    manufacturer_substances = [
+        {
+            "ManufacturerID": row["manufacturer_id"],
+            "SubstanceID": row["substance_id"],
+        }
+        for row in source["manufacturer_active_substances"]
+    ]
+
+    manufacturer_ids = {row["ManufacturerID"] for row in manufacturer_substances}
+    manufacturers = []
+    for manufacturer_id in sorted(manufacturer_ids):
+        supplier = supplier_by_id.get(manufacturer_id)
+        if supplier is None or supplier["service_category"] != "API manufacturing":
+            raise ValueError(f"Manufacturer is not a canonical API supplier: {manufacturer_id}")
+        _, _, country = normalize_location(supplier["address_lines"])
+        manufacturers.append(
+            {
+                "ManufacturerID": manufacturer_id,
+                "Name": supplier["supplier_name"],
+                "Country": country,
+                "ApprovalStatus": (
+                    "Conditional"
+                    if profiles[manufacturer_id]["audit"] == "Requires Improvement"
+                    else "Approved"
+                ),
+            }
+        )
+
+    def unique_ids(rows: list[dict[str, Any]], key: str, label: str) -> set[str]:
+        values = [row[key] for row in rows]
+        if len(values) != len(set(values)):
+            raise ValueError(f"{label} IDs must be unique.")
+        return set(values)
+
+    product_ids = unique_ids(products, "ProductID", "Product")
+    substance_ids = unique_ids(substances, "SubstanceID", "Substance")
+    agency_ids = unique_ids(agencies, "AgencyID", "Agency")
+    unique_ids(authorizations, "AuthorizationID", "Authorization")
+    if not all(
+        row["ProductID"] in product_ids and row["AgencyID"] in agency_ids
+        for row in authorizations
+    ):
+        raise ValueError("Marketing authorization contains an unknown endpoint key.")
+    if not all(
+        row["ProductID"] in product_ids and row["SubstanceID"] in substance_ids
+        for row in product_substances
+    ):
+        raise ValueError("Product-substance relationship contains an unknown endpoint key.")
+    if not all(
+        row["ManufacturerID"] in manufacturer_ids
+        and row["SubstanceID"] in substance_ids
+        for row in manufacturer_substances
+    ):
+        raise ValueError("Manufacturer-substance relationship contains an unknown endpoint key.")
+    if {row["ProductID"] for row in product_substances} != product_ids:
+        raise ValueError("Every medicinal product must contain an active substance.")
+    if {row["SubstanceID"] for row in manufacturer_substances} != substance_ids:
+        raise ValueError("Every active substance must have an approved manufacturer.")
+
+    return {
+        "MedicinalProduct": products,
+        "ActiveSubstance": substances,
+        "Manufacturer": manufacturers,
+        "MarketingAuthorization": authorizations,
+        "RegulatoryAgency": agencies,
+        "ProductActiveSubstance": product_substances,
+        "ManufacturerActiveSubstance": manufacturer_substances,
+    }
+
+
 def build_tables() -> dict[str, pa.Table]:
     """Build every typed lakehouse table and validate the relational contract."""
     suppliers = canonical_suppliers()
     profiles = profile_data()
     supplier_ids = {row["supplier_id"] for row in suppliers}
-    expected_ids = {f"sup-{number:03d}" for number in range(1, 16)}
-    if supplier_ids != expected_ids or set(profiles) != expected_ids:
-        raise ValueError("Canonical identity and synthetic profile IDs must be sup-001..sup-015.")
+    if set(profiles) != supplier_ids:
+        raise ValueError("Canonical supplier and synthetic profile IDs must match.")
 
     locations = []
     supplier_rows = []
@@ -330,7 +511,7 @@ def build_tables() -> dict[str, pa.Table]:
             {
                 "SupplierID": supplier_id,
                 "SupplierName": supplier["supplier_name"],
-                "ServiceCategory": profile["service_category"],
+                "ServiceCategory": supplier["service_category"],
                 "LocationID": location_id,
                 "Location": location,
                 "ExperienceYears": static["experience_years"],
@@ -399,13 +580,14 @@ def build_tables() -> dict[str, pa.Table]:
             )
         ],
     }
+    rows_by_table.update(ontology_rows(suppliers, profiles))
     tables = {
         name: pa.Table.from_pylist(rows_by_table[name], schema=schema)
         for name, schema in TABLE_SCHEMAS.items()
     }
-    if tables["DimSupplier"].num_rows != 15:
-        raise ValueError("DimSupplier must contain 15 rows.")
-    if tables["SupplierPerformance"].num_rows != 15 * SNAPSHOT_WEEKS:
+    if tables["DimSupplier"].num_rows != len(suppliers):
+        raise ValueError("DimSupplier row count does not match the supplier registry.")
+    if tables["SupplierPerformance"].num_rows != len(suppliers) * SNAPSHOT_WEEKS:
         raise ValueError("SupplierPerformance row count is incorrect.")
     return tables
 
@@ -509,6 +691,32 @@ def validate_delta_schema(expected: pa.Schema, actual: dict[str, Any], name: str
         raise ValueError(f"Persisted Delta schema mismatch for {name}.")
 
 
+def wait_for_tables(
+    client: FabricClient,
+    workspace_id: str,
+    lakehouse_id: str,
+    expected_tables: set[str],
+    attempts: int = 12,
+) -> set[str]:
+    """Wait for loaded Delta tables to appear in the Fabric catalog."""
+    missing = expected_tables
+    for attempt in range(1, attempts + 1):
+        table_names = {
+            item.name
+            for item in client.lakehouse.tables.list_tables(workspace_id, lakehouse_id)
+        }
+        missing = expected_tables - table_names
+        if not missing:
+            return set()
+        if attempt < attempts:
+            print(
+                f"Waiting for Fabric table catalog ({attempt}/{attempts}); "
+                f"missing {len(missing)} table(s)..."
+            )
+            time.sleep(5)
+    return missing
+
+
 def deploy(tables: dict[str, pa.Table]) -> None:
     """Create or reuse the lakehouse and overwrite all supplier tables."""
     load_dotenv(ENV_PATH, override=True)
@@ -526,7 +734,7 @@ def deploy(tables: dict[str, pa.Table]) -> None:
                     display_name=LAKEHOUSE_NAME,
                     description="Synthetic supplier performance analytics for Caldova.",
                 ),
-            ).result
+            ).result()
         else:
             print(f"Reusing lakehouse '{LAKEHOUSE_NAME}'.")
 
@@ -545,10 +753,7 @@ def deploy(tables: dict[str, pa.Table]) -> None:
                 table_name,
             )
 
-        table_names = {item.name for item in client.lakehouse.tables.list_tables(
-            workspace_id, lakehouse.id
-        )}
-        missing = set(tables) - table_names
+        missing = wait_for_tables(client, workspace_id, lakehouse.id, set(tables))
         if missing:
             raise RuntimeError(f"Fabric did not expose loaded tables: {sorted(missing)}")
     finally:

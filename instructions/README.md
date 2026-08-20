@@ -53,17 +53,7 @@ This builds the Fabric supplier analytics + `SupplierDataAgent`, the `caldova-su
 knowledge base (four sources), and the hosted agent. See
 [`../infra/README.md`](../infra/README.md) for details and the by-hand path.
 
-### 3. Publish the ontology (one-time, preview)
-
-The Fabric IQ ontology's graph build is a portal step today:
-
-1. Fabric → open **`CaldovaSupplierOntology`** → **Publish**.
-2. Open **`SupplierDataAgent`** → **Add data source** → select the ontology.
-
-See [`../docs/supplier-ontology.md`](../docs/supplier-ontology.md). The demo works
-without this — `SupplierSM` already answers the relationship questions.
-
-### 4. Approve + hire the agent
+### 3. Approve + hire the agent
 
 1. Approve the agent blueprint in the [Microsoft 365 admin center](https://admin.cloud.microsoft/?#/agents/all/requested).
 2. Set the **Bot ID** in the [Teams Developer Portal](https://dev.teams.microsoft.com/tools/agent-blueprint).
@@ -71,7 +61,7 @@ without this — `SupplierSM` already answers the relationship questions.
 
 (Full detail in [`../docs/setup.md`](../docs/setup.md) and [`../infra/a365/README.md`](../infra/a365/README.md).)
 
-### 5. Try it
+### 4. Try it
 
 Chat with the deployed agent (VS Code **Foundry Toolkit**, or in Teams once hired).
 Ask one question at a time:
@@ -79,12 +69,13 @@ Ask one question at a time:
 - **Web IQ** — *Any weather or carrier disruptions this week that could affect cold-chain shipments?*
 - **Foundry IQ** — *Is a major cold-chain excursion eligible for replacement and credit?*
 - **Fabric IQ** — *Rank suppliers by OTIF and flag any with open regulatory actions.*
+- **Fabric IQ** (ontology) — *Which active substances have only one approved manufacturer?*
 - **Foundry IQ** — *Why was Summit Dose awarded CALD-201?*
 - **Work IQ** (in Teams) — *Any urgent supply escalations in your mailbox?*
 
 ## Learn more
 
 - [Setup / deploy reference](../docs/setup.md)
-- [Fabric IQ ontology](../docs/supplier-ontology.md)
+- [Fabric IQ ontology](../docs/ontology.md)
 - [Demo flows](../delivery-resources/demos/README.md)
 - [The Caldova data corpus](../data/README.md)

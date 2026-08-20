@@ -55,7 +55,7 @@ that acts end to end under enterprise governance.
    | 3 | Rank suppliers by OTIF and flag any with open regulatory actions. | Fabric IQ |
    | 4 | Why was Summit Dose awarded CALD-201? | Foundry IQ (procurement) |
    | 5 | What did BluePeak's GMP inspection find? | Foundry IQ (quality) |
-   | 6 | Which suppliers share a region? | Fabric IQ |
+   | 6 | Which active substances have only one approved manufacturer? | Fabric IQ (ontology) |
    | 7 | Any weather or carrier disruptions this week that could affect cold-chain shipments? | Web IQ |
    | 8 | Reply to Maria's escalation: confirm replacement + credit per policy, note the supplier's standing and the disruption, and list next steps. | Work IQ (reply) |
 

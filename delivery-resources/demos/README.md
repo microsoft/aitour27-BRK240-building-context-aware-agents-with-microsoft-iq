@@ -16,7 +16,7 @@ policy, and web context — then run as a governed teammate in Microsoft Teams.
 |---|---|---|
 | **Web IQ** | Real-world context (weather, carrier, news) | Demo 1 |
 | **Foundry IQ** | Documents: policies, contracts, quality/inspection reports | Demo 1 |
-| **Fabric IQ** | Numbers: supplier OTIF, quality, regulatory, audit, financial | Demo 2 |
+| **Fabric IQ** | Numbers *and* relationships: supplier OTIF, quality, regulatory, audit, financial — plus the medicinal-product ontology (products, substances, manufacturers, authorizations) | Demo 2 |
 | **Work IQ** | The mailbox (read + reply) | Demo 3 |
 
 The clean boundary — **numbers → Fabric IQ, documents → Foundry IQ** — is enforced in
@@ -27,7 +27,7 @@ the agent's instructions so each question routes to exactly one source.
 | # | Demo | What it shows | Starts in |
 |---|---|---|---|
 | 1 | [Grounding with enterprise knowledge](demo-01-grounding-web-foundry-iq.md) | Chat with the deployed agent (Toolkit); Web IQ live context + Foundry IQ knowledge base (sources + index shown in the Foundry portal) | VS Code Foundry Toolkit + Foundry portal |
-| 2 | [Business data with Fabric IQ](demo-02-fabric-iq.md) | Fabric workspace, ontology, Data Agent + instructions, and how the agent wires to it in code | Microsoft Fabric |
+| 2 | [Business data with Fabric IQ](demo-02-fabric-iq.md) | Fabric workspace, the medicinal-product ontology, Data Agent + instructions, a question that spans semantic model *and* ontology, and how the agent wires to it in code | Microsoft Fabric |
 | 3 | [All four IQs as a governed teammate](demo-03-all-iqs-teams-governance.md) | Work IQ in Foundry, the full flow in Teams, the email proof in Outlook, and Agent 365 governance in the admin center | Microsoft Foundry → Teams → Admin center |
 
 ## Before any demo — set up the environment
@@ -42,10 +42,12 @@ If you're starting from scratch, do the setup first:
 ## Global pre-demo checklist (T-10 min)
 
 - [ ] Agent is on the intended version (currently **v29**, `@latest`).
-- [ ] **Warm up Fabric IQ**: ask the Data Agent one OTIF question so the first
-      NL2SQL call in the demo isn't a cold start.
+- [ ] **Warm up Fabric IQ — both sources**: ask one OTIF question *and* one ontology
+      question ("Which active substances have only one approved manufacturer?") so
+      neither cold-starts on stage.
 - [ ] All four IQ connections healthy: Web IQ, Foundry IQ (`caldova-supply-kb`),
-      Fabric IQ (`caldova-supply-dataagent` → `SupplierDataAgent`), Work IQ.
+      Fabric IQ (`caldova-supply-dataagent` → `SupplierDataAgent`, attached to both
+      `SupplierSM` and `CaldovaMedicinalProductOntology`), Work IQ.
 - [ ] The autopilot is hired in Teams and reachable (send it a quick `hi`).
 - [ ] A seeded **escalation email** (Maria Garcia) is **unread** in the *agent's*
       mailbox (not your personal mailbox).

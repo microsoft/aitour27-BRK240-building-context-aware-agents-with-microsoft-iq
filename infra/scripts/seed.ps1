@@ -11,23 +11,39 @@
 
   Pipeline:
 
-    [1] Fabric IQ — provision the supplier analytics from the official Caldova
-        dataset (data/caldova-upstream). Creates the CaldovaSupplierAnalytics
-        lakehouse, the SupplierSM semantic model, the Supplier Performance report,
-        and the SupplierDataAgent, via the upstream `uv`-based provision scripts.
+    [1] Fabric IQ — provision the whole Fabric stack from the official Caldova
+        dataset (data/caldova-upstream) using the upstream `uv`-based provision
+        scripts, in their documented dependency order:
 
-    [2] Fabric IQ ontology — create the CaldovaSupplierOntology graph structure over
-        SupplierSM (create-supplier-ontology.py). NOTE: the ontology graph *build*
-        (Publish) is a one-time manual step in the Fabric portal today (preview
-        limitation); the script prints the reminder. See docs/supplier-ontology.md.
+          create_fabric_lakehouse.py       -> CaldovaSupplierAnalytics (14 Delta tables)
+          create_fabric_ontology.py        -> CaldovaMedicinalProductOntology
+          ../../infra/scripts/refresh-ontology-graph.py
+                                           -> builds the ontology graph (see note below)
+          create_fabric_semantic_model.py  -> SupplierSM
+          create_fabric_reports.py         -> Supplier Performance
+          create_fabric_data_agent.py      -> SupplierDataAgent
 
-    [3] Foundry IQ — build the Caldova knowledge base `caldova-supply-kb`:
+        NOTE: creating the ontology materializes an EMPTY graph model. Until it is
+        refreshed, the Data Agent answers ontology questions with "the graph model
+        required to answer this query is currently unavailable". The upstream scripts
+        do not trigger that refresh, so this repo runs refresh-ontology-graph.py as a
+        post-step. It is a normal Fabric job — there is no portal step.
+
+        The Data Agent stage attaches BOTH SupplierSM and the ontology, so it can
+        answer supplier analytics (DAX), ontology traversal (GQL), and questions
+        that combine the two by joining Manufacturer.manufacturerId to
+        DimSupplier.SupplierID. The ontology must run before the Data Agent, which
+        requires FABRIC_ONTOLOGY_ID from the upstream .env.
+
+    [2] Foundry IQ — build the Caldova knowledge base `caldova-supply-kb`:
         - seed-foundryiq.py       -> the policy knowledge source (data/knowledge-base)
         - seed-foundryiq-docs.py  -> procurement / quality / cold-chain document
                                      sources from the upstream corpus, attached to the KB
 
   Prereqs:
-    - `az login` (DefaultAzureCredential); rights on the Search service + Fabric workspace/capacity.
+    - `az login` (DefaultAzureCredential) for the Foundry IQ scripts; rights on the Search service.
+    - `azd auth login` for the Fabric provision scripts (they use AzureDeveloperCliCredential),
+      plus rights to create/update items in the Fabric workspace and capacity.
     - `uv` (https://docs.astral.sh/uv/) for the Fabric provision scripts.
     - Python deps for the Foundry IQ scripts: pip install -r infra/scripts/seed-requirements.txt
     - azd env has: TENANT_ID, FABRIC_WORKSPACE_ID, AZURE_AI_SEARCH_SERVICE_ENDPOINT
@@ -48,48 +64,63 @@ function Get-EnvOrThrow([string]$name) {
     return $v
 }
 
+function Set-UpstreamEnvValue([string]$path, [hashtable]$values) {
+    # Merge keys into the upstream .env rather than overwriting it: the provision
+    # scripts write FABRIC_ONTOLOGY_ID / FABRIC_*_URL back to this same file, and the
+    # Data Agent stage reads FABRIC_ONTOLOGY_ID from it.
+    $lines = @()
+    if (Test-Path $path) { $lines = @(Get-Content $path) }
+    foreach ($key in $values.Keys) {
+        $entry = "$key=$($values[$key])"
+        $match = $lines | Select-String -Pattern "^\s*$key\s*=" | Select-Object -First 1
+        if ($match) { $lines[$match.LineNumber - 1] = $entry } else { $lines += $entry }
+    }
+    Set-Content -Path $path -Value $lines -Encoding utf8
+}
+
 Push-Location $repoRoot
 try {
     if (-not $SkipFabric) {
-        Write-Host "=== [1] Fabric IQ - provision supplier analytics (upstream dataset) ===" -ForegroundColor Cyan
+        Write-Host "=== [1] Fabric IQ - provision the Caldova Fabric stack (upstream dataset) ===" -ForegroundColor Cyan
         $tenantId    = Get-EnvOrThrow "TENANT_ID"
         $workspaceId = Get-EnvOrThrow "FABRIC_WORKSPACE_ID"
-        # The upstream scripts read a root .env (FABRIC_TENANT_ID + FABRIC_WORKSPACE_ID).
-        "FABRIC_TENANT_ID=$tenantId`nFABRIC_WORKSPACE_ID=$workspaceId" |
-            Set-Content -Path (Join-Path $upstream ".env") -Encoding utf8 -NoNewline
+        # The upstream scripts read a root .env (FABRIC_TENANT_ID + FABRIC_WORKSPACE_ID)
+        # and write their own outputs back into it.
+        Set-UpstreamEnvValue (Join-Path $upstream ".env") @{
+            FABRIC_TENANT_ID    = $tenantId
+            FABRIC_WORKSPACE_ID = $workspaceId
+        }
         Push-Location $upstream
         try {
             uv sync --locked
-            uv run python provision/fabric/create_fabric_lakehouse.py
-            uv run python provision/fabric/create_fabric_semantic_model.py
-            uv run python provision/fabric/create_fabric_reports.py
-            uv run python provision/fabric/create_fabric_data_agent.py
+            if ($LASTEXITCODE -ne 0) { throw "uv sync failed ($LASTEXITCODE)." }
+
+            # Upstream dependency order (data/caldova-upstream/provision/fabric/README.md).
+            # The ontology must precede the Data Agent, which requires FABRIC_ONTOLOGY_ID.
+            $steps = @(
+                @{ Script = "provision/fabric/create_fabric_lakehouse.py";      Label = "CaldovaSupplierAnalytics lakehouse (14 Delta tables)" }
+                @{ Script = "provision/fabric/create_fabric_ontology.py";       Label = "CaldovaMedicinalProductOntology"; Ontology = $true }
+                @{ Script = "../../infra/scripts/refresh-ontology-graph.py";    Label = "Ontology graph build (refreshGraph)"; Ontology = $true }
+                @{ Script = "provision/fabric/create_fabric_semantic_model.py"; Label = "SupplierSM semantic model" }
+                @{ Script = "provision/fabric/create_fabric_reports.py";        Label = "Supplier Performance report" }
+                @{ Script = "provision/fabric/create_fabric_data_agent.py";     Label = "SupplierDataAgent (attaches SupplierSM + ontology)" }
+            )
+            foreach ($step in $steps) {
+                if ($step.Ontology -and $SkipOntology) {
+                    Write-Host "  -- skipping $($step.Label) (-SkipOntology)" -ForegroundColor Yellow
+                    Write-Host "     NOTE: the Data Agent stage still needs FABRIC_ONTOLOGY_ID from a previous run." -ForegroundColor Yellow
+                    continue
+                }
+                Write-Host "  -> $($step.Label)" -ForegroundColor Cyan
+                uv run python $step.Script
+                if ($LASTEXITCODE -ne 0) { throw "$($step.Script) failed ($LASTEXITCODE)." }
+            }
         }
         finally { Pop-Location }
     }
 
-    if (-not $SkipOntology) {
-        Write-Host "=== [2] Fabric IQ - create the supplier ontology structure ===" -ForegroundColor Cyan
-        $workspaceId = Get-EnvOrThrow "FABRIC_WORKSPACE_ID"
-        # Discover the CaldovaSupplierAnalytics lakehouse GUID by name (created in step 1)
-        # so the ontology binds to THIS deployment's lakehouse, not a hardcoded default.
-        $lhName = $env:FABRIC_LAKEHOUSE_NAME; if (-not $lhName) { $lhName = "CaldovaSupplierAnalytics" }
-        $fabTok = az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken -o tsv
-        $items = (Invoke-RestMethod "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/items" `
-            -Headers @{ Authorization = "Bearer $fabTok" }).value
-        $lh = $items | Where-Object { $_.type -eq 'Lakehouse' -and $_.displayName -eq $lhName } | Select-Object -First 1
-        if (-not $lh) { throw "Lakehouse '$lhName' not found in workspace $workspaceId. Run the Fabric provision step first (do not use -SkipFabric)." }
-        Write-Host "  Lakehouse '$lhName' = $($lh.id)"
-        $env:FABRIC_LAKEHOUSE_ID = $lh.id
-        python infra/scripts/create-supplier-ontology.py
-        if ($LASTEXITCODE -ne 0) { throw "create-supplier-ontology.py failed ($LASTEXITCODE)." }
-        Write-Host "  Ontology structure created. One manual step remains (preview): open" -ForegroundColor Yellow
-        Write-Host "  CaldovaSupplierOntology in the Fabric portal, Publish it, then add it as a" -ForegroundColor Yellow
-        Write-Host "  SupplierDataAgent data source. See docs/supplier-ontology.md." -ForegroundColor Yellow
-    }
-
     if (-not $SkipFoundryIQ) {
-        Write-Host "=== [3] Foundry IQ - build the Caldova knowledge base ===" -ForegroundColor Cyan
+        Write-Host "=== [2] Foundry IQ - build the Caldova knowledge base ===" -ForegroundColor Cyan
         [void](Get-EnvOrThrow "AZURE_AI_SEARCH_SERVICE_ENDPOINT")
         python infra/scripts/seed-foundryiq.py
         if ($LASTEXITCODE -ne 0) { throw "seed-foundryiq.py failed ($LASTEXITCODE)." }

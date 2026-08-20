@@ -7,12 +7,13 @@ from pathlib import Path
 
 import httpx
 from azure.identity import AzureDeveloperCliCredential
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 
 REPO_ROOT = Path(__file__).parents[2]
 ENV_PATH = REPO_ROOT / ".env"
 FABRIC_API_URL = "https://api.fabric.microsoft.com"
 FABRIC_SCOPE = f"{FABRIC_API_URL}/.default"
+PORTAL_BASE_URL = "https://msit.powerbi.com"
 SEMANTIC_MODEL_NAME = "SupplierSM"
 DATA_AGENT_NAME = "SupplierDataAgent"
 OPERATION_TIMEOUT_SECONDS = 300
@@ -31,7 +32,43 @@ metrics, and weekly performance trends. Supplier identity comes from the canonic
 Waypoint invoice corpus. Performance metrics are fictional synthetic analytics and
 must not be described as facts extracted from invoices. Treat null manufacturing
 metrics as not applicable, never as zero. Use latest and four-week change measures
-for current status and recent movement.
+for current status and recent movement. Use CaldovaMedicinalProductOntology for
+medicinal products, active substances, manufacturers, marketing authorizations,
+regulatory agencies, and relationships among them. For questions spanning both sources,
+join Manufacturer.manufacturerId from the ontology to DimSupplier.SupplierID from
+SupplierSM, and combine the source results by that exact ID.
+"""
+ONTOLOGY_DESCRIPTION = (
+    "Caldova medicinal products, active substances, manufacturers, marketing "
+    "authorizations, regulatory agencies, and their relationships."
+)
+ONTOLOGY_INSTRUCTIONS = """Generate Fabric Ontology GQL. Entity and property names
+are case-sensitive. Entity types are MedicinalProduct, ActiveSubstance, Manufacturer,
+MarketingAuthorization, and RegulatoryAgency. Relationships are contains, manufactures,
+hasAuthorization, and issuedBy. Use FILTER after MATCH for predicates; never use WHERE.
+Use single quotes for string literals. Use relationship traversal when a question spans
+entity types, and include only the entities and relationships needed to answer it. Never
+use entity or relationship type names as variable aliases because names such as product
+and contains are reserved keywords. Use aliases ending in Node for entities and Edge for
+relationships. Enclose every variable alias in backticks everywhere it appears.
+Every relationship pattern must close the square bracket before the arrow. The required
+form is (`sourceNode`:`SourceType`)-[`edgeAlias`:`relationshipType`]->
+(`targetNode`:`TargetType`). Never generate -[`edgeAlias`:`relationshipType`-> because
+it is missing the mandatory closing bracket.
+Manufacturer.approvalStatus has values Approved and Conditional.
+MarketingAuthorization.status has values Active and Pending. An approved manufacturer
+means only FILTER LOWER(`manufacturerNode`.`approvalStatus`) = 'approved'. Never compare
+MarketingAuthorization.status to approved. Do not traverse hasAuthorization or issuedBy
+unless the question asks about authorizations, markets, or regulatory agencies.
+For approved manufacturers and their substances and products, follow this pattern:
+MATCH (`manufacturerNode`:`Manufacturer`)-[`manufacturesEdge`:`manufactures`]->
+(`substanceNode`:`ActiveSubstance`)<-[`containsEdge`:`contains`]-
+(`productNode`:`MedicinalProduct`)
+FILTER LOWER(`manufacturerNode`.`approvalStatus`) = 'approved'
+RETURN `manufacturerNode`.`name` AS manufacturerName,
+`substanceNode`.`preferredName` AS activeSubstance,
+`productNode`.`name` AS medicinalProduct
+ORDER BY manufacturerName, activeSubstance, medicinalProduct
 """
 
 
@@ -147,11 +184,11 @@ def ensure_datasource(
     client: httpx.Client,
     base_url: str,
     workspace_id: str,
-    semantic_model_id: str,
+    item_id: str,
 ) -> dict:
-    """Attach SupplierSM and return its staging data source."""
+    """Attach a Fabric item and return its staging data source."""
     for source in list_datasources(client, base_url):
-        if source.get("itemReference", {}).get("itemId") == semantic_model_id:
+        if source.get("itemReference", {}).get("itemId") == item_id:
             return source
     response = request(
         client,
@@ -162,7 +199,7 @@ def ensure_datasource(
             "type": "FabricItem",
             "itemReference": {
                 "referenceType": "ById",
-                "itemId": semantic_model_id,
+                "itemId": item_id,
                 "workspaceId": workspace_id,
             },
         },
@@ -171,8 +208,26 @@ def ensure_datasource(
     return next(
         source
         for source in list_datasources(client, base_url)
-        if source.get("itemReference", {}).get("itemId") == semantic_model_id
+        if source.get("itemReference", {}).get("itemId") == item_id
     )
+
+
+def configure_datasource(
+    client: httpx.Client,
+    base_url: str,
+    datasource_id: str,
+    description: str,
+    instructions: str,
+) -> None:
+    """Configure source-specific generation guidance."""
+    response = request(
+        client,
+        "PATCH",
+        f"{base_url}/staging/datasources/{datasource_id}",
+        expected_statuses={httpx.codes.OK, httpx.codes.ACCEPTED},
+        json_body={"description": description, "instructions": instructions},
+    )
+    wait_for_operation(client, response)
 
 
 def select_tables(client: httpx.Client, base_url: str, datasource_id: str) -> None:
@@ -209,6 +264,7 @@ def deploy() -> None:
     load_dotenv(ENV_PATH, override=True)
     tenant_id = require_env("FABRIC_TENANT_ID")
     workspace_id = require_env("FABRIC_WORKSPACE_ID")
+    ontology_id = require_env("FABRIC_ONTOLOGY_ID")
     credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
     try:
         token = credential.get_token(FABRIC_SCOPE).token
@@ -234,6 +290,16 @@ def deploy() -> None:
             client, base_url, workspace_id, semantic_model["id"]
         )
         select_tables(client, base_url, datasource["id"])
+        ontology_datasource = ensure_datasource(
+            client, base_url, workspace_id, ontology_id
+        )
+        configure_datasource(
+            client,
+            base_url,
+            ontology_datasource["id"],
+            ONTOLOGY_DESCRIPTION,
+            ONTOLOGY_INSTRUCTIONS,
+        )
         response = request(
             client,
             "POST",
@@ -249,7 +315,14 @@ def deploy() -> None:
         f"{FABRIC_API_URL}/v1/mcp/workspaces/{workspace_id}"
         f"/dataagents/{agent['id']}/agent"
     )
+    ui_url = (
+        f"{PORTAL_BASE_URL}/groups/{workspace_id}/aiskills/{agent['id']}"
+        "?experience=data-science"
+    )
+    set_key(ENV_PATH, "FABRIC_DATA_AGENT_MCP_URL", mcp_url, quote_mode="never")
+    set_key(ENV_PATH, "FABRIC_DATA_AGENT_UI_URL", ui_url, quote_mode="never")
     print(f"Data Agent: {DATA_AGENT_NAME} ({agent['id']})")
+    print(f"Fabric UI: {ui_url}")
     print(f"MCP endpoint: {mcp_url}")
 
 
