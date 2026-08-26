@@ -2,7 +2,7 @@ name: caldova-supply-autopilot
 
 services:
   caldova-supply-autopilot:
-    project: ./src/agent
+    project: ./src/autopilot
     host: azure.ai.agent
     language: python
     codeConfiguration:

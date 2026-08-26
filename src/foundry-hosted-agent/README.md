@@ -3,14 +3,14 @@
 A **self-contained Foundry Hosted Agent** for the Caldova supplier-assurance
 scenario, built to be **demoed live in the Microsoft Foundry portal** (Agents list +
 Playground). It is deliberately kept separate from the Teams / Agent 365
-**autopilot** in [`../src/agent`](../src/agent) so the two never mix. It is deployed
+**autopilot** in [`../autopilot`](../autopilot) so the two never mix. It is deployed
 **into the same Microsoft Foundry project as its four Microsoft IQ connections**
 (`4iq-foundry-project`), so each Microsoft IQ tool call is visible in the **Traces**
 tab.
 
 | | Foundry Hosted Agent (`caldova-supply-hosted-agent`) | Autopilot (`caldova-supply-autopilot`) |
 |---|---|---|
-| Folder | `foundry-agent/` | repo root + `src/agent/` |
+| Folder | `src/foundry-hosted-agent/` | `src/autopilot/` |
 | Runtime | `agent-framework` — Microsoft Foundry runs the tool loop | hand-rolled Responses API loop |
 | Surface | **Microsoft Foundry portal Playground** | Microsoft Teams |
 | Microsoft IQ | **All 4** (Web IQ, Foundry IQ, Fabric IQ, Work IQ) | All 4 |
@@ -50,7 +50,7 @@ so the four IQs work for anyone in the Playground.
 ## Layout
 
 ```
-foundry-agent/
+src/foundry-hosted-agent/
   azure.yaml                      # hosted-agent service shape (responses protocol)
   src/
     main.py                       # agent-framework host: FoundryChatClient + Agent + ResponsesHostServer
@@ -88,7 +88,7 @@ the account / ACR / IQ connection ids), and the Fabric workspace GUID behind the
 Caldova Fabric Data Agent.
 
 ```powershell
-cd foundry-agent
+cd src/foundry-hosted-agent
 # One-time: create a client secret on the agent-identity blueprint used for OBO
 #   az ad app credential reset --id <OboBlueprintClientId> --append
 ./infra/scripts/deploy.ps1 `
@@ -121,7 +121,7 @@ agent reuses the same real mailbox + Fabric access without a separate hire.
 ## Local run
 
 ```powershell
-cd foundry-agent/src
+cd src/foundry-hosted-agent/src
 Copy-Item .env.example .env   # fill in the values
 python main.py
 # POST http://localhost:8088/responses  { "input": "…", "stream": true }
