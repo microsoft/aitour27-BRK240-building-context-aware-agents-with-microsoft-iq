@@ -49,6 +49,17 @@ Data Agent), then show the agent's code and instructions that connect to it.
    relationship layer — the semantic model knows *how suppliers perform*, the ontology
    knows *what depends on what*.
 
+> **Why both a semantic model AND an ontology? (say this on stage)** They answer two
+> different kinds of question over the same Fabric data, and the Data Agent uses whichever
+> fits. **`SupplierSM` (semantic model) = the numbers** — metrics and aggregations (OTIF,
+> quality, regulatory/audit/financial, rankings); great for *"how much / how many / rank
+> by / flag where,"* but it has **no path** to walk multi-step relationships.
+> **`CaldovaMedicinalProductOntology` (ontology / graph) = the relationships** — a graph
+> of Medicinal Product → Active Substance → Manufacturer → Authorization, for *"what
+> depends on what / which connects to which."* The point: **Fabric IQ is numbers *and*
+> relationships over your system of record** — one Data Agent spans both. That's *"how
+> your business operates,"* not just SQL over tables.
+
 ### Part B — the Data Agent
 
 4. Open **`SupplierDataAgent`**. Show its **two data sources** — `SupplierSM` and
@@ -60,21 +71,23 @@ Data Agent), then show the agent's code and instructions that connect to it.
 
    > Rank all suppliers by latest OTIF and flag any with open regulatory actions.
 
-6. Show the ranked list over the real model. Then an **ontology** question:
+6. Show the ranked list over the real model. Then a simple, single-hop **ontology** question:
 
-   > Which medicinal products depend on active substances made by Rheinwerk Pharma Ingredients?
+   > Which medicinal products contain Caldovexine?
 
-   Two hops through the graph — manufacturer → substance → product — which the
-   semantic model has no path for.
+   One hop through the graph (Medicinal Product `contains` Active Substance) — a
+   relationship the semantic model has no path for.
+   > **Warm the ontology first** (ask it once ~1–2 min before recording) — the graph can
+   > cold-start and time out on the first call. Keep to **single-hop** phrasings on stage.
 
 7. Finally, the one that needs **both sources** — the payoff of this demo:
 
-   > What is Rheinwerk Pharma Ingredients' latest OTIF, and which medicinal products
-   > depend on the active substances it makes?
+   > What is Rheinwerk Pharma Ingredients' latest OTIF, and which active substances does
+   > it manufacture?
 
-   OTIF comes from `SupplierSM`; substance → product comes from the ontology; they join
-   on `Manufacturer.manufacturerId` ↔ `DimSupplier.SupplierID`. Point out that one
-   question spanned both.
+   OTIF comes from `SupplierSM`; the substances come from the ontology (Manufacturer
+   `manufactures` Active Substance — a single **forward** hop); they join on
+   `Manufacturer.manufacturerId` ↔ `DimSupplier.SupplierID`. One question, both sources.
 
 ### Part C — how the agent wires to it (code)
 
@@ -95,15 +108,15 @@ Data Agent), then show the agent's code and instructions that connect to it.
 
 ## Questions used
 
-Each of these was run repeatedly against the live Data Agent; the **Reliability** column
-is how often it returned a correct, well-formed answer.
+Keep to **single-hop, forward-direction** ontology questions on stage. Recommended set:
 
-| Ask | Source | Reliability |
+| Ask | Source | Notes |
 |---|---|---|
-| Rank all suppliers by latest OTIF and flag any with open regulatory actions. | `SupplierSM` (DAX) | 4/4 |
-| Which medicinal products contain Caldovexine? | Ontology (GQL) | 4/4 — simplest one-hop |
-| Which medicinal products depend on active substances made by Rheinwerk Pharma Ingredients? | Ontology (GQL) | 4/4 — two hops |
-| What is Rheinwerk Pharma Ingredients' latest OTIF, and which medicinal products depend on the active substances it makes? | **Both** | 2/2 joined correctly |
+| Rank all suppliers by latest OTIF and flag any with open regulatory actions. | `SupplierSM` (DAX) | ✅ rock-solid |
+| Which medicinal products contain Caldovexine? | Ontology (GQL) | ✅ **use this** — simplest one-hop |
+| What active substances does Rheinwerk Pharma Ingredients manufacture? | Ontology (GQL) | ✅ one-hop, forward direction |
+| What is Rheinwerk Pharma Ingredients' latest OTIF, and which active substances does it manufacture? | **Both** | ✅ SM + one-hop ontology, joins on manufacturer ↔ supplier |
+| Which medicinal products depend on active substances made by Rheinwerk Pharma Ingredients? | Ontology (GQL) | ⚠️ two-hop — warm up first, or skip on stage |
 
 ### Phrasings to avoid on stage
 
