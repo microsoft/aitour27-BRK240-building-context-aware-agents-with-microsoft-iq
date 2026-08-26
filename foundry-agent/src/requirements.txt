@@ -1,0 +1,6 @@
+# Classic Foundry-native hosted agent — Foundry runs the model + IQ tool loop, so the
+# portal Playground chats with it AND the Traces tab shows each IQ by name.
+agent-framework-foundry==1.10.1
+agent-framework-foundry-hosting==1.0.0a260709
+azure-identity>=1.17.0
+httpx>=0.24.0

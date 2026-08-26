@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+#
+# Standalone Caldova Supply Foundry agent.
+#
+# This describes the hosted-agent service shape. The SUPPORTED deploy path in this
+# repo is the script orchestrator `infra/scripts/deploy.ps1` (the azd `azure.ai.agents`
+# extension is pinned to an incompatible preview here, so we create the agent version
+# via the REST scripts — same approach the autopilot uses). Keep this file for portal
+# context and for when the azd-native agent extension is compatible again.
+name: caldova-supply-foundry
+
+services:
+  caldova-supply-foundry:
+    project: ./src
+    host: azure.ai.agent
+    language: python
+    codeConfiguration:
+      dependencyResolution: remote_build
+      entryPoint: main.py
+      runtime: python_3_13
+    kind: hosted
+    name: caldova-supply-foundry
+    protocols:
+      - protocol: responses
+        version: 2.0.0
