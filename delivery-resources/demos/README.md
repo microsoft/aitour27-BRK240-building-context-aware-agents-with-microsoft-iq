@@ -76,7 +76,7 @@ Some beats mean switching to the editor, not just clicking in a portal:
 
 | Demo | File to open | What to point at |
 |---|---|---|
-| **all IQs** | `src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1` | the **one toolbox** (`caldova-supply-tools`) bundling Fabric IQ (`fabric_iq_preview`) + Work IQ + Foundry IQ + Web IQ |
+| **all IQs** | `src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1` | the **one toolbox** (`caldova-supply-tools`) bundling Fabric IQ (Data Agent MCP) + Work IQ + Foundry IQ + Web IQ, all as MCP tools |
 | **all IQs** | `src/foundry-hosted-agent/src/main.py` | the whole agent = a **single `FoundryToolbox`** reference (Microsoft Foundry runs it with auth passthrough) |
 | **3 — Fabric IQ** | `src/foundry-hosted-agent/src/instructions.md` | the routing rule: numbers → Fabric IQ, documents → Foundry IQ |
 | **4 — Work IQ** | `create-toolbox.ps1` → the `workiq` tool | the `UserEntraToken` connection → Work IQ resolves as the signed-in you |

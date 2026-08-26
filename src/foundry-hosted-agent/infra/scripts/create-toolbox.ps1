@@ -10,7 +10,7 @@
     1. ``fabric-iq-caldova`` — a RemoteTool / UserEntraToken / custom_MCP connection that
        targets the Caldova Fabric Data Agent MCP endpoint (per-user identity).
     2. ``caldova-supply-tools`` — a toolbox version bundling all four Microsoft IQ tools
-       (Fabric IQ ``fabric_iq_preview`` + Work IQ + Foundry IQ + Web IQ), promoted as the
+       as **MCP** tools (Fabric Data Agent + Work IQ + Foundry IQ + Web IQ), promoted as the
        default version.
 
   The Fabric Data Agent and the WorkIQ / caldova-supply-kb / WebIQ connections must
@@ -60,7 +60,7 @@ Write-Host "  connection ready."
 $token = az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv
 $headers = @{ Authorization = "Bearer $token"; "Content-Type" = "application/json" }
 $tools = @(
-    @{ type = "fabric_iq_preview"; name = "supplier_analytics"; project_connection_id = $FabricConnectionName; server_label = $FabricConnectionName; server_url = $fabricMcpUrl; require_approval = "never" },
+    @{ type = "mcp"; server_label = "fabric-dataagent"; project_connection_id = $FabricConnectionName; require_approval = "never" },
     @{ type = "mcp"; server_label = "workiq";    project_connection_id = $WorkIqConnection;    require_approval = "never" },
     @{ type = "mcp"; server_label = "foundryiq"; project_connection_id = $FoundryIqConnection; require_approval = "never" },
     @{ type = "mcp"; server_label = "webiq";     project_connection_id = $WebIqConnection;     require_approval = "never" }
