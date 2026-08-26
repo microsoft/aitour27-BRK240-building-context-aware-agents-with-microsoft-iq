@@ -442,3 +442,5 @@ data/caldova-upstream/.env
 .venv/
 **/.venv/
 
+foundry-agent/.azure/
+**/.azure/

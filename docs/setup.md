@@ -7,6 +7,11 @@
 > **no prompt agent to create and wrap**. It targets the agent name
 > `caldova-supply-autopilot`.
 
+> **Two agents in this repo.** This guide deploys the **Teams autopilot**
+> (`caldova-supply-autopilot`). For the **Foundry portal Playground** agent
+> (`caldova-supply-hosted-agent`) used in Demos 1–2, see
+> [`../foundry-agent/README.md`](../foundry-agent/README.md).
+
 ## 🧠 The four IQs
 
 The agent attaches these tools on every Responses API turn (see

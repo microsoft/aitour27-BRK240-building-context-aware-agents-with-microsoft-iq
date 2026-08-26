@@ -78,15 +78,18 @@ Data Agent), then show the agent's code and instructions that connect to it.
 
 ### Part C — how the agent wires to it (code)
 
-8. In **VS Code**, open `src/agent/agent.py` and show `_load_iq_tools` attaching the
-   Fabric IQ tool as `fabric_dataagent_preview` via the `FABRIC_CONNECTION_ID`
-   connection — "one tool reference; the Data Agent does the querying."
-9. Open `src/agent/instructions.md` and show the **routing boundary**: numbers,
+8. In **VS Code**, open `foundry-agent/src/main.py` and show the Fabric IQ tool being
+   attached to the agent as a `fabric_dataagent_preview` tool via the
+   `FABRIC_CONNECTION_ID` connection — "one tool reference; the Data Agent does the
+   querying." (The hosted agent uses `agent-framework`, so Foundry runs the tool loop
+   and the call shows in **Traces**.)
+9. Open `foundry-agent/src/instructions.md` and show the **routing boundary**: numbers,
    rankings, OTIF, regulatory/audit/financial status → **Fabric IQ**; documents →
    Foundry IQ. Highlight how specific the instructions are — this is what keeps the
    IQs from overlapping.
-10. (Optional) Chat with the agent (Foundry Toolkit) to show the same Fabric answer
-    coming through the full agent, not just the Data Agent:
+10. Chat with the agent in the **Microsoft Foundry portal Playground** to show the same Fabric
+    answer coming through the full agent, then open **Traces** to show
+    **`Invoke Agent SupplierDataAgent` → `Execute Tool analyze_semantic_model`**:
 
     > Rank suppliers by OTIF and flag any with open regulatory actions.
 
