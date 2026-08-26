@@ -51,8 +51,9 @@ If you're starting from scratch, do the setup first:
 - [ ] `caldova-supply-hosted-agent` is on `@latest` in the Playground (Demos 1–4);
       `caldova-supply-autopilot` is hired in Teams (Demo 5).
 - [ ] **Warm up Fabric IQ — both sources**: ask one OTIF question and one ontology
-      question ("Which medicinal products depend on active substances made by
-      Rheinwerk Pharma Ingredients?") so neither cold-starts on stage.
+      question ("Which medicinal products contain Caldovexine?") so neither cold-starts
+      on stage. *(The ontology graph can time out on a cold first call — keep ontology
+      questions single-hop.)*
 - [ ] All four IQ connections healthy: Web IQ, Foundry IQ (`caldova-supply-kb`),
       Fabric IQ (`caldova-supply-dataagent` → `SupplierDataAgent`, attached to both
       `SupplierSM` and `CaldovaMedicinalProductOntology`), Work IQ.
