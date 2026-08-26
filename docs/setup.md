@@ -10,12 +10,12 @@
 > **Two agents in this repo.** This guide deploys the **Teams autopilot**
 > (`caldova-supply-autopilot`). For the **Foundry portal Playground** agent
 > (`caldova-supply-hosted-agent`) used in Demos 1–2, see
-> [`../foundry-agent/README.md`](../foundry-agent/README.md).
+> [`../src/foundry-hosted-agent/README.md`](../src/foundry-hosted-agent/README.md).
 
 ## 🧠 The four IQs
 
 The agent attaches these tools on every Responses API turn (see
-`src/agent/agent.py` → `_load_iq_tools`). Every IQ is a **Foundry
+`src/autopilot/agent.py` → `_load_iq_tools`). Every IQ is a **Foundry
 project-connection reference** — the connection carries auth, so the Responses call
 must target the project endpoint (`IQ_PROJECT_ENDPOINT`) for them to resolve. The
 connection names are set by the seeding step (see [`../infra/README.md`](../infra/README.md))
@@ -30,7 +30,7 @@ and surfaced as env vars in `.env.example`.
 
 - **Model:** a reasoning model deployment in your Foundry project (e.g. `gpt-5.4-mini`) with `reasoning.effort=low`.
 - **Instructions:** the Caldova supplier-assurance prompt lives in
-  `src/agent/instructions.md` (editable), wrapped with an A365
+  `src/autopilot/instructions.md` (editable), wrapped with an A365
   hosting preamble (`{user_name}`, HTML formatting, prompt-injection guardrails). It
   enforces the IQ boundary — **numbers → Fabric IQ, documents → Foundry IQ**.
 
@@ -138,9 +138,9 @@ azd auth login
 #### Optional: Customize Your Agent
 
 Before deploying, you can customize:
-- **Agent instructions:** [instructions.md](../src/agent/instructions.md) (loaded and wrapped with the A365 hosting preamble in `agent.py`)
-- **The four IQs:** [agent.py](../src/agent/agent.py) → `_load_iq_tools` (connection references come from environment variables)
-- **MCP tools:** [ToolingManifest.json](../src/agent/ToolingManifest.json) - [Learn more](https://learn.microsoft.com/en-us/microsoft-agent-365/tooling-servers-overview)
+- **Agent instructions:** [instructions.md](../src/autopilot/instructions.md) (loaded and wrapped with the A365 hosting preamble in `agent.py`)
+- **The four IQs:** [agent.py](../src/autopilot/agent.py) → `_load_iq_tools` (connection references come from environment variables)
+- **MCP tools:** [ToolingManifest.json](../src/autopilot/ToolingManifest.json) - [Learn more](https://learn.microsoft.com/en-us/microsoft-agent-365/tooling-servers-overview)
 
 #### Deploy
 

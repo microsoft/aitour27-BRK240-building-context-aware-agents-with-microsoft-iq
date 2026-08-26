@@ -1,10 +1,12 @@
 # Demo flows — Caldova Supply, four Microsoft IQs
 
-Three live demos build one story across all four Microsoft IQs on **Caldova
-Pharmaceuticals'** own supplier, contract, policy, and web context. Demos 1–2 run in
-the **Microsoft Foundry portal Playground** on a native Foundry Hosted Agent (`caldova-supply-hosted-agent`);
-Demo 3 runs the **Agent 365 autopilot** (`caldova-supply-autopilot`) as a governed
-teammate in Microsoft Teams. The two are independent agents.
+Five live demos build one story across all four Microsoft IQs on **Caldova
+Pharmaceuticals'** own supplier, contract, policy, and web context. Demos 1–4 run in
+the **Microsoft Foundry portal Playground** on the native **Foundry Hosted Agent**
+(`caldova-supply-hosted-agent`) — one Microsoft IQ each, always the same beat:
+**ask → Traces → the IQ's own surface → the code**. Demo 5 runs the **Agent 365
+autopilot** (`caldova-supply-autopilot`) as a governed teammate in Microsoft Teams.
+The two are independent agents.
 
 > **Scenario.** Caldova is qualifying contract manufacturers (CMOs) and handling a
 > cold-chain escalation. The autopilot reads the mailbox, ranks suppliers on real
@@ -17,9 +19,9 @@ teammate in Microsoft Teams. The two are independent agents.
 | IQ | Owns | Surface in these demos |
 |---|---|---|
 | **Web IQ** | Real-world context (weather, carrier, news) | Demo 1 |
-| **Foundry IQ** | Documents: policies, contracts, quality/inspection reports | Demo 1 |
-| **Fabric IQ** | Numbers *and* relationships: supplier OTIF, quality, regulatory, audit, financial — plus the medicinal-product ontology (products, substances, manufacturers, authorizations) | Demo 2 |
-| **Work IQ** | The mailbox (read + reply) | Demo 3 |
+| **Foundry IQ** | Documents: policies, contracts, quality/inspection reports | Demo 2 |
+| **Fabric IQ** | Numbers *and* relationships: supplier OTIF, quality, regulatory, audit, financial — plus the medicinal-product ontology (products, substances, manufacturers, authorizations) | Demo 3 |
+| **Work IQ** | The mailbox (read + reply) | Demo 4 (Playground) + Demo 5 (Teams) |
 
 The clean boundary — **numbers → Fabric IQ, documents → Foundry IQ** — is enforced in
 the agent's instructions so each question routes to exactly one source.
@@ -28,24 +30,26 @@ the agent's instructions so each question routes to exactly one source.
 
 | # | Demo | What it shows | Starts in |
 |---|---|---|---|
-| 1 | [Grounding with enterprise knowledge](demo-01-grounding-web-foundry-iq.md) | Chat the hosted agent in the **Playground**; Web IQ live context + Foundry IQ knowledge base (sources + index + **Traces** in the Microsoft Foundry portal) | Microsoft Foundry portal Playground |
-| 2 | [Business data with Fabric IQ](demo-02-fabric-iq.md) | Fabric workspace, the medicinal-product ontology, Data Agent + instructions, a question that spans semantic model *and* ontology, the tool call in **Traces**, and how the agent wires to it in code | Microsoft Fabric + Playground |
-| 3 | [All four IQs as a governed teammate](demo-03-all-iqs-teams-governance.md) | Work IQ in Foundry, the full flow in Teams, the email proof in Outlook, and Agent 365 governance in the admin center | Microsoft Foundry → Teams → Admin center |
+| 1 | [Web IQ](web-iq.md) | Live-web grounding; Web IQ in **Traces**, the MCP surface, and the code | Microsoft Foundry portal Playground |
+| 2 | [Foundry IQ](foundry-iq.md) | Cited policy answer; Foundry IQ in **Traces**, the knowledge base, and the code | Microsoft Foundry portal Playground |
+| 3 | [Fabric IQ](fabric-iq.md) | Numbers *and* the medicinal-product ontology via the Data Agent; **Traces**, the Fabric workspace, and the code | Microsoft Fabric + Playground |
+| 4 | [Work IQ](work-iq.md) | Reads your real mailbox **on-behalf-of you**; Work IQ in **Traces**, Outlook, and the OBO code | Microsoft Foundry portal Playground |
+| 5 | [All four IQs + the autopilot](all-4-iqs-autopilot.md) | The governed autopilot in Teams — its own identity, all four IQs, replies from its mailbox, admin governance | Microsoft Teams → Admin center |
 
 ## Before any demo — set up the environment
 
-All three demos assume the agent is already deployed and the four IQs are seeded.
+All five demos assume the agents are deployed and the four Microsoft IQs are seeded.
 If you're starting from scratch, do the setup first:
 
-- **Hosted agent (Playground) — deploy:** [`../../foundry-agent/README.md`](../../foundry-agent/README.md)
+- **Foundry Hosted Agent (Playground) — deploy:** [`../../src/foundry-hosted-agent/README.md`](../../src/foundry-hosted-agent/README.md)
 - **Autopilot (Teams) — prerequisites + deploy:** [`../../docs/setup.md`](../../docs/setup.md)
 - **Attendee quickstart (build → deploy → try it):** [`../../instructions/README.md`](../../instructions/README.md)
 - **Seeding + one-command `azd up`:** [`../../infra/README.md`](../../infra/README.md)
 
 ## Global pre-demo checklist (T-10 min)
 
-- [ ] `caldova-supply-hosted-agent` is on `@latest` in the Playground (Demos 1–2);
-      `caldova-supply-autopilot` is hired in Teams (Demo 3).
+- [ ] `caldova-supply-hosted-agent` is on `@latest` in the Playground (Demos 1–4);
+      `caldova-supply-autopilot` is hired in Teams (Demo 5).
 - [ ] **Warm up Fabric IQ — both sources**: ask one OTIF question and one ontology
       question ("Which medicinal products depend on active substances made by
       Rheinwerk Pharma Ingredients?") so neither cold-starts on stage.
@@ -72,9 +76,12 @@ Some beats mean switching to the editor, not just clicking in a portal:
 
 | Demo | File to open | What to point at |
 |---|---|---|
-| **Demo 2** | `foundry-agent/src/main.py` | Fabric IQ as one `fabric_dataagent_preview` tool + the MCP IQ tools |
-| **Demo 2** | `foundry-agent/src/instructions.md` | the routing rule: numbers → Fabric IQ, documents → Foundry IQ |
-| Demo 3 *(optional)* | `src/agent/instructions.md` (Email section) | how the autopilot is told to reply via Work IQ |
+| **1 — Web IQ** | `src/foundry-hosted-agent/src/main.py` (L79–88) | Web IQ as one `get_mcp_tool` on the `WebIQ` connection |
+| **2 — Foundry IQ** | `src/foundry-hosted-agent/src/main.py` (L90–101) | Foundry IQ as one `get_mcp_tool` on `caldova-supply-kb` |
+| **3 — Fabric IQ** | `src/foundry-hosted-agent/src/main.py` (L103–114) | Fabric IQ as one `fabric_dataagent_preview` tool |
+| **3 — Fabric IQ** | `src/foundry-hosted-agent/src/instructions.md` | the routing rule: numbers → Fabric IQ, documents → Foundry IQ |
+| **4 — Work IQ** | `src/foundry-hosted-agent/src/main.py` (L116–129) + `obo.py` | Work IQ tool header + the on-behalf-of-user OBO exchange |
+| **5 — autopilot** | `src/autopilot/instructions.md` (Email section) | how the autopilot is told to reply via Work IQ |
 
 Keep the repo open in VS Code alongside the Microsoft Foundry portal Playground so these switches are quick.
 

@@ -1,7 +1,7 @@
 # Build Docker image using Azure Container Registry (ACR) Build
 # This script uses ACR Tasks to build the image in the cloud instead of locally
 
-Set-Location "$($PSScriptRoot)/../../src/agent"
+Set-Location "$($PSScriptRoot)/../../src/autopilot"
 
 Remove-Item "./__pycache__" -Recurse -Force -ErrorAction SilentlyContinue
 Get-ChildItem -Path . -Filter "__pycache__" -Recurse -Force -ErrorAction SilentlyContinue |

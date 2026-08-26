@@ -1,4 +1,4 @@
-# Demo 2 — Business data with Fabric IQ
+# Demo 3 — Fabric IQ
 
 > Recording: _add link_ · Duration target: ~4–5 min
 
@@ -78,12 +78,12 @@ Data Agent), then show the agent's code and instructions that connect to it.
 
 ### Part C — how the agent wires to it (code)
 
-8. In **VS Code**, open `foundry-agent/src/main.py` and show the Fabric IQ tool being
+8. In **VS Code**, open `src/foundry-hosted-agent/src/main.py` and show the Fabric IQ tool being
    attached to the agent as a `fabric_dataagent_preview` tool via the
    `FABRIC_CONNECTION_ID` connection — "one tool reference; the Data Agent does the
    querying." (The hosted agent uses `agent-framework`, so Foundry runs the tool loop
    and the call shows in **Traces**.)
-9. Open `foundry-agent/src/instructions.md` and show the **routing boundary**: numbers,
+9. Open `src/foundry-hosted-agent/src/instructions.md` and show the **routing boundary**: numbers,
    rankings, OTIF, regulatory/audit/financial status → **Fabric IQ**; documents →
    Foundry IQ. Highlight how specific the instructions are — this is what keeps the
    IQs from overlapping.

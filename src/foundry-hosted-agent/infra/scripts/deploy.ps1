@@ -43,7 +43,7 @@ $ErrorActionPreference = "Stop"
 
 # --- Load azd environment values into $env: for the child scripts ---------------
 Write-Host "Loading azd environment ..."
-Push-Location "$PSScriptRoot/../../.."   # repo root (where the autopilot azure.yaml + .azure env live)
+Push-Location "$PSScriptRoot/../../../.."   # repo root (where the autopilot azure.yaml + .azure env live)
 try {
     $envLines = azd env get-values
 } finally {

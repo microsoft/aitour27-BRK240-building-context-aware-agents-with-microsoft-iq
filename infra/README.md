@@ -54,7 +54,7 @@ The seed data lives in [`../data`](../data). The scripts under `scripts/` build 
 
 After seeding, set the agent env vars (`FOUNDRYIQ_CONNECTION_ID`/`FOUNDRYIQ_MCP_URL`,
 `FABRIC_CONNECTION_ID`, `WORK_IQ_CONNECTION_ID`, `WEB_IQ_CONNECTION_ID`) — see
-[`../src/agent/.env.example`](../src/agent/.env.example).
+[`../src/autopilot/.env.example`](../src/autopilot/.env.example).
 
 > **Validated live (end to end):** the Fabric provision scripts build the supplier lakehouse
 > (15 suppliers, 1,575 weekly performance rows) and publish `SupplierDataAgent`, which answers
