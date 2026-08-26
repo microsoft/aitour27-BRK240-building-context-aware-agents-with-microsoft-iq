@@ -76,11 +76,10 @@ Some beats mean switching to the editor, not just clicking in a portal:
 
 | Demo | File to open | What to point at |
 |---|---|---|
-| **1 — Web IQ** | `src/foundry-hosted-agent/src/main.py` (L79–88) | Web IQ as one `get_mcp_tool` on the `WebIQ` connection |
-| **2 — Foundry IQ** | `src/foundry-hosted-agent/src/main.py` (L90–101) | Foundry IQ as one `get_mcp_tool` on `caldova-supply-kb` |
-| **3 — Fabric IQ** | `src/foundry-hosted-agent/src/main.py` (L103–114) | Fabric IQ as one `fabric_dataagent_preview` tool |
+| **all IQs** | `src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1` | the **one toolbox** (`caldova-supply-tools`) bundling Fabric IQ (`fabric_iq_preview`) + Work IQ + Foundry IQ + Web IQ |
+| **all IQs** | `src/foundry-hosted-agent/src/main.py` | the whole agent = a **single `FoundryToolbox`** reference (Microsoft Foundry runs it with auth passthrough) |
 | **3 — Fabric IQ** | `src/foundry-hosted-agent/src/instructions.md` | the routing rule: numbers → Fabric IQ, documents → Foundry IQ |
-| **4 — Work IQ** | `src/foundry-hosted-agent/src/main.py` (L116–129) + `obo.py` | Work IQ tool header + the on-behalf-of-user OBO exchange |
+| **4 — Work IQ** | `create-toolbox.ps1` → the `workiq` tool | the `UserEntraToken` connection → Work IQ resolves as the signed-in you |
 | **5 — autopilot** | `src/autopilot/instructions.md` (Email section) | how the autopilot is told to reply via Work IQ |
 
 Keep the repo open in VS Code alongside the Microsoft Foundry portal Playground so these switches are quick.

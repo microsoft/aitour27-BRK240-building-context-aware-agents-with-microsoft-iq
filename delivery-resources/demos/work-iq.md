@@ -14,12 +14,14 @@ the actual email, then show the code that attaches Work IQ and mints the user to
 |---|---|
 | **Chat** the agent + show **Traces** | Microsoft Foundry portal — Playground |
 | **Show** the real email | Outlook (your mailbox) |
-| **Show** the code | VS Code — `src/foundry-hosted-agent/src/main.py` + `obo.py` |
+| **Show** the code | VS Code — `create-toolbox.ps1` + `src/foundry-hosted-agent/src/main.py` |
 
 ## Before you start
 
-- `caldova-supply-hosted-agent` is deployed with **on-behalf-of-user OBO** enabled.
-- A cold-chain escalation email (from **Maria Garcia**) is in the signed-in user's mailbox.
+- `caldova-supply-hosted-agent` is deployed; the `caldova-supply-tools` toolbox carries
+  Work IQ (auth passthrough → the signed-in user).
+- A cold-chain escalation email (**Priya Nair — SHP-9021, Brightline Labs**) is in **your**
+  mailbox. *(Seed it by mailing it to yourself; the agent's own mailbox has a separate one.)*
 
 ---
 
@@ -28,17 +30,17 @@ the actual email, then show the code that attaches Work IQ and mints the user to
 1. **Playground** — ask:
    > Any urgent supply escalations in my mailbox?
 
-   It finds **Maria Garcia's** escalation — SHP-1234 (Alvexa).
+   It finds **your** escalation — **SHP-9021 (Brightline Labs)** from **Priya Nair**.
+   *(Or ask "Summarize my mails" to show it's reading your real inbox.)*
 2. Open **Traces** → show the **Work IQ** tool call. Call out that it's reading
-   **your** mailbox — the agent is acting **on-behalf-of you**, so it only sees what
-   you're allowed to see.
+   **your** mailbox — the agent acts **on-behalf-of you**, so it only sees what you can.
 3. **Outlook** → open the same escalation email — "that's the message it just surfaced."
 4. **VS Code:**
-   - `src/foundry-hosted-agent/src/main.py` (**L116–129**) → `# 4) Work IQ` →
-     `client.get_mcp_tool(name="Work IQ", headers={…user token…})` — "Work IQ acts as
-     the signed-in user."
-   - `src/foundry-hosted-agent/src/obo.py` (**`AgenticOboClient` / `token_for`**) → the
-     agentic **on-behalf-of** exchange that mints the user's token for Work IQ.
+   - `src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1` → the **`workiq`** tool in
+     the `caldova-supply-tools` toolbox, on the **`UserEntraToken`** connection.
+   - `src/foundry-hosted-agent/src/main.py` → the single `FoundryToolbox`.
+   > "Microsoft Foundry runs the toolbox with **auth passthrough** — no manual tokens; Work
+   > IQ resolves as the signed-in you."
 
 ## Questions used
 

@@ -36,8 +36,9 @@ of code that wires it in.
    `caldova-supply-kb`. Walk its **four sources** (policies / procurement & contracts /
    supplier quality & compliance / cold-chain evidence).
    > "It's not one pile of PDFs — it's four organized sources the agent can cite."
-4. **VS Code** → `src/foundry-hosted-agent/src/main.py` (**L90–101**) → `# 2) Foundry IQ`
-   → `client.get_mcp_tool(name="Foundry IQ", …, project_connection_id="caldova-supply-kb")`.
+4. **VS Code** — `src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1` → the
+   **`foundryiq`** tool in the `caldova-supply-tools` toolbox (on `caldova-supply-kb`);
+   and `src/foundry-hosted-agent/src/main.py` → the single `FoundryToolbox` reference.
 5. *(optional)* Show it reaching a different source:
    > Why was Summit Dose awarded CALD-201?
 
