@@ -161,10 +161,12 @@ Respivane = Respivanol · Dermalune = Dermalunide · **Glycora Duo = Glycoride +
 Note Pacifica is *Conditional*, not Approved — that's what makes Respivanol and
 Dermalunide single-**approved**-source, and why Metabex has no approved manufacturer.
 
-> If an ontology question instead returns *"the graph model required to answer this
-> query is currently unavailable"*, the graph needs rebuilding — run
-> `uv run python ../../infra/scripts/refresh-ontology-graph.py` from
-> `data/caldova-upstream`. See [`../../docs/ontology.md`](../../docs/ontology.md).
+> **If an ontology question times out (~5 min / "operation was canceled") or returns
+> *"the graph model required to answer this query is currently unavailable"*, the graph
+> hasn't been ingested yet.** Rebuild it: `uv run python ../../infra/scripts/refresh-ontology-graph.py`
+> from `data/caldova-upstream` (or in the portal: the `…_graph` model → **… → Schedule →
+> Refresh now**), then re-run `create_fabric_data_agent.py` to re-publish the agent.
+> Verify with `getQueryableGraphType` returning 200. See [`../../docs/ontology.md`](../../docs/ontology.md).
 
 ## Expected result
 
