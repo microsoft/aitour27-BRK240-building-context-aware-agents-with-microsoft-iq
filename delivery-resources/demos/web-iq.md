@@ -37,10 +37,11 @@ tool fire in **Traces**, then see exactly how it's wired in the code.
 3. **Show the Web IQ surface** — the Web IQ MCP endpoint
    (`https://api.microsoft.ai/v3/mcp`). Point out Web IQ is a hosted **MCP** tool the
    agent calls; nothing was scraped or cached.
-4. **VS Code** → `src/foundry-hosted-agent/src/main.py` (**L79–88**) → `# 1) Web IQ` →
-   `client.get_mcp_tool(name="Web IQ", …, project_connection_id="WebIQ")`.
-   > "One hosted MCP tool on the Web IQ connection — Microsoft Foundry runs the loop,
-   > so the call shows up in Traces."
+4. **VS Code** — show the **one toolbox** that carries all four Microsoft IQs:
+   `src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1` → the **`webiq`** tool in
+   `caldova-supply-tools`; then `src/foundry-hosted-agent/src/main.py` → the agent is a
+   **single `FoundryToolbox`** reference.
+   > "One toolbox, four Microsoft IQs — Microsoft Foundry runs it with auth passthrough."
 
 ## Questions used
 

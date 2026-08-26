@@ -78,11 +78,11 @@ Data Agent), then show the agent's code and instructions that connect to it.
 
 ### Part C — how the agent wires to it (code)
 
-8. In **VS Code**, open `src/foundry-hosted-agent/src/main.py` and show the Fabric IQ tool being
-   attached to the agent as a `fabric_dataagent_preview` tool via the
-   `FABRIC_CONNECTION_ID` connection — "one tool reference; the Data Agent does the
-   querying." (The hosted agent uses `agent-framework`, so Foundry runs the tool loop
-   and the call shows in **Traces**.)
+8. In **VS Code**, open `src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1` and show
+   the **`fabric_iq_preview`** tool in the `caldova-supply-tools` toolbox — bound to the
+   Fabric Data Agent MCP endpoint via a **`UserEntraToken`** connection, so it resolves as
+   the signed-in user. Then open `src/foundry-hosted-agent/src/main.py` — the whole agent is
+   a **single `FoundryToolbox`** reference (Microsoft Foundry runs it with auth passthrough).
 9. Open `src/foundry-hosted-agent/src/instructions.md` and show the **routing boundary**: numbers,
    rankings, OTIF, regulatory/audit/financial status → **Fabric IQ**; documents →
    Foundry IQ. Highlight how specific the instructions are — this is what keeps the

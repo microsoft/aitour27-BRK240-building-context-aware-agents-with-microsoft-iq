@@ -22,30 +22,21 @@ which is exactly what the autopilot cannot offer once it is published to Teams.
 
 ## Microsoft IQ coverage and identity — all four IQs, real data
 
-The agent calls the Azure OpenAI **Responses API** on the *IQ project* endpoint with
-tools that reference the same Foundry **project connections** the autopilot uses. It
-authenticates that call as a **provisioned Agent 365 agent-user** (`caldova-autopilot@…`)
-via **real agentic OBO**, so every IQ resolves with live data:
+All four Microsoft IQs are exposed through **one Microsoft Foundry toolbox**
+(`caldova-supply-tools`). The container authenticates with its own **managed identity**,
+and Microsoft Foundry runs the toolbox with **auth passthrough** — so the user-delegated
+IQs resolve as the **signed-in Playground user** (no manual token exchange, no secrets):
 
-- **Fabric IQ** (`fabric_dataagent_preview`) → resolves as the agent-user (who has Fabric
-  workspace access) → real supplier analytics (OTIF, quality, regulatory).
-- **Foundry IQ** + **Web IQ** → resolve on the same user token.
-- **Work IQ** → a user-delegated Work IQ token reads the agent-user's **real mailbox**.
+- **Fabric IQ** — a `fabric_iq_preview` tool on a `UserEntraToken` connection to the
+  Fabric Data Agent MCP endpoint → resolves as **you**.
+- **Work IQ** — an `mcp` tool on the `UserEntraToken` `WorkIQ` connection → reads **your**
+  mailbox (one-time consent in the Playground).
+- **Foundry IQ** + **Web IQ** — `mcp` tools on their project connections, over the same call.
 
-**How the OBO works (3-leg exchange against `login.microsoftonline.com/{tenant}/oauth2/v2.0/token`):**
-1. **blueprint** — `client_credentials` with the agent-identity blueprint's client secret and
-   `fmi_path` = the ServiceIdentity SP.
-2. **instance** — `client_credentials` as the **ServiceIdentity SP** (client assertion = blueprint token).
-3. **user_fic** — `grant_type=user_fic`, `user_id` = the agent-user object id → a user-delegated token.
-
-> The exchange **must** use the agent's **ServiceIdentity** SP (not the AgentIdentity) as the
-> instance — that is the identity the agent-user's federated credential trusts. Using the
-> AgentIdentity fails with `AADSTS7002203`.
-
-The standalone agent defaults to the **autopilot's** provisioned identities (blueprint /
-ServiceIdentity / agent-user), so it reuses the same real mailbox + Fabric access without
-a separate hire. No signed-in portal user is required — OBO acts as the fixed agent-user,
-so the four IQs work for anyone in the Playground.
+The toolbox (and the `fabric-iq-caldova` connection it needs) are provisioned by
+[`infra/scripts/create-toolbox.ps1`](infra/scripts/create-toolbox.ps1). The agent code
+([`src/main.py`](src/main.py)) is a **single `FoundryToolbox`** reference — every Microsoft
+IQ tool call still shows in the **Traces** tab.
 
 ## Layout
 
