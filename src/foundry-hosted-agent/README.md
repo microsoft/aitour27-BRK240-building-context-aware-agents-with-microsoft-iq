@@ -27,8 +27,9 @@ All four Microsoft IQs are exposed through **one Microsoft Foundry toolbox**
 and Microsoft Foundry runs the toolbox with **auth passthrough** — so the user-delegated
 IQs resolve as the **signed-in Playground user** (no manual token exchange, no secrets):
 
-- **Fabric IQ** — a `fabric_iq_preview` tool on a `UserEntraToken` connection to the
-  Fabric Data Agent MCP endpoint → resolves as **you**.
+- **Fabric IQ** — an `mcp` tool on a `UserEntraToken` connection to the
+  `SupplierDataAgent` MCP endpoint (natural-language over the semantic model *and* the
+  ontology graph) → resolves as **you**.
 - **Work IQ** — an `mcp` tool on the `UserEntraToken` `WorkIQ` connection → reads **your**
   mailbox (one-time consent in the Playground).
 - **Foundry IQ** + **Web IQ** — `mcp` tools on their project connections, over the same call.
