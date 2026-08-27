@@ -22,6 +22,22 @@ Microsoft IQ platform** (FY27 Caldova, Chapter 01 "Ground").
 | Setup / deploy | [../docs/setup.md](../docs/setup.md) | Provision, seed, register |
 | Attendee instructions | [../instructions/README.md](../instructions/README.md) | Start here for the guided path |
 
+## Full session recording
+
+The full session presentation. This breakout is divided into an intro, the five demos,
+and a wrap-up. Add the recording link above, then fill the timings below after the final
+cut.
+
+| Time | Description |
+|---|---|
+| 0:00 – 0:00 | Intro and overview |
+| 0:00 – 0:00 | Demo 1 — Web IQ |
+| 0:00 – 0:00 | Demo 2 — Foundry IQ |
+| 0:00 – 0:00 | Demo 3 — Fabric IQ |
+| 0:00 – 0:00 | Demo 4 — Work IQ |
+| 0:00 – 0:00 | Demo 5 — All four IQs + the autopilot |
+| 0:00 – 0:00 | Wrap up and Q&A |
+
 ## Demo recordings
 
 One clip per demo, in two versions: a **clean capture** with no audio (for you to
