@@ -146,9 +146,10 @@ def main() -> None:
             "description": "Caldova supply-assurance knowledge base: returns, replacement, "
             "credit, and cold-chain (GDP) policy.",
             "knowledgeSources": [{"name": KS_NAME}],
-            "retrievalReasoningEffort": {"kind": "low"},
         }
         if AOAI_ENDPOINT and AOAI_MODEL and AOAI_KEY:
+            # A synthesis model is available: use agentic retrieval with answer synthesis.
+            kb_body["retrievalReasoningEffort"] = {"kind": "low"}
             kb_body["outputMode"] = "answerSynthesis"
             kb_body["models"] = [
                 {
@@ -162,6 +163,9 @@ def main() -> None:
                 }
             ]
         else:
+            # No synthesis model configured: return extractive passages. Reasoning
+            # efforts other than 'minimal' require a model, so keep it minimal here.
+            kb_body["retrievalReasoningEffort"] = {"kind": "minimal"}
             kb_body["outputMode"] = "extractiveData"
         _put(client, f"knowledgeBases/{KB_NAME}", kb_body)
         print(f"Created/updated knowledge base: {KB_NAME} ({kb_body['outputMode']})")
