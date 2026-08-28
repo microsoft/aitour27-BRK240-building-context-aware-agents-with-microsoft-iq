@@ -68,7 +68,7 @@ if ($AgentMailbox) {
     if ($agentOk) {
         Write-Host "Seeded the AGENT mailbox ($AgentMailbox): Maria Garcia / SHP-1234." -ForegroundColor Green
     } else {
-        Write-Host "Could not auto-send to the agent mailbox. Send this to $AgentMailbox:" -ForegroundColor Yellow
+        Write-Host "Could not auto-send to the agent mailbox. Send this to ${AgentMailbox}:" -ForegroundColor Yellow
         Write-Host "  Subject : $($maria.subject)"
         Write-Host "  Body    :`n$($maria.body)`n"
     }
