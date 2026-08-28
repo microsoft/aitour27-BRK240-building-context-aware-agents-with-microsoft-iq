@@ -75,7 +75,7 @@ if (-not $fabricDataAgentId) { throw "Could not read the Fabric Data Agent id fr
     -AccountResourceId $accountResourceId `
     -FabricWorkspaceId $env:FABRIC_WORKSPACE_ID `
     -FabricDataAgentId $fabricDataAgentId
-& "$repoRoot/src/foundry-hosted-agent/infra/scripts/deploy.ps1"
+& "$repoRoot/src/foundry-hosted-agent/infra/scripts/deploy.ps1" -FabricWorkspaceId $env:FABRIC_WORKSPACE_ID
 
 # --- 4. Agent 365 autopilot (demo 5) ------------------------------------------------------------
 # Builds the image + creates the autopilot version (auto-create blueprint, two passes). The
