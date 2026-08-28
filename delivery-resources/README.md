@@ -76,13 +76,25 @@ Two agents over one set of Microsoft IQ connections:
   Publishing and approving the autopilot in Agent 365 (demo 5) requires a
   **Global Administrator** in that tenant.
 
-**Pre-existing Azure/Fabric resources** (you bring these; `azd up` does not create them)
+**Platform services you must already have**
 
-- **Azure AI Search** service — backs Foundry IQ.
-- **Microsoft Fabric** workspace on an active **capacity** — backs Fabric IQ.
-- A **Microsoft Foundry project** to hold the four IQ connections + a reasoning model
-  deployment (e.g. `gpt-5.4-mini`).
+You provide these existing services; the setup steps below create all the Caldova demo
+content *inside* them. None of these are created for you.
+
+- An **Azure AI Search** service — the Foundry IQ knowledge base is created here.
+- A **Microsoft Fabric** workspace on an active **capacity** — the Fabric tables, ontology,
+  semantic model, and Data Agent are created here.
+- A **Microsoft Foundry** project with a reasoning model deployment (e.g. `gpt-5.4-mini`) —
+  it holds the four IQ connections and hosts the agent.
 - A **Web IQ** (`api.microsoft.ai`) subscription key.
+
+**What the setup creates for you** (in the steps below)
+
+- In Fabric: the `CaldovaSupplierAnalytics` lakehouse, the ontology, the `SupplierSM`
+  semantic model, a report, and the published `SupplierDataAgent`.
+- In the Foundry project: the four Microsoft IQ connections, the `caldova-supply-tools`
+  toolbox, and the deployed **Foundry Hosted Agent**.
+- The **Agent 365 autopilot** (via `azd up` + the Agent 365 publish/hire steps).
 
 **Tools**
 
@@ -91,13 +103,14 @@ Two agents over one set of Microsoft IQ connections:
 - [Python 3.11+](https://www.python.org/downloads/) and [uv](https://docs.astral.sh/uv/)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
-Full prerequisites and the two-project model: [`../docs/setup.md`](../docs/setup.md).
+Full prerequisites and permissions detail: [`../docs/setup.md`](../docs/setup.md).
 
 ### 1. Provision the Fabric data
 
-From [`../data/caldova-upstream/`](../data/caldova-upstream/) (Pamela Fox's canonical
-Caldova dataset), create a `.env` with `FABRIC_TENANT_ID` and `FABRIC_WORKSPACE_ID`, sign
-in (`azd auth login` / `az login`), then `uv sync`. Run the scripts in order:
+The Caldova dataset lives in [`../data/caldova-upstream/`](../data/caldova-upstream/). From
+that folder, create a `.env` with `FABRIC_TENANT_ID` and `FABRIC_WORKSPACE_ID` (your
+existing workspace), sign in (`azd auth login` / `az login`), then `uv sync`. Run the
+scripts in order:
 
 ```bash
 uv run python provision/fabric/create_fabric_lakehouse.py
