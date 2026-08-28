@@ -84,10 +84,12 @@ Two agents over one set of Microsoft IQ connections:
 - [Python 3.11+](https://www.python.org/downloads/) and [uv](https://docs.astral.sh/uv/)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
-**Have these ready before setup**
+**Have this ready before setup**
 
 - Your **Web IQ preview key** → `WEB_IQ_API_KEY`.
-- A **Microsoft Fabric workspace** and its id → `FABRIC_WORKSPACE_ID`.
+
+`azd up` creates the Microsoft Fabric workspace for you. To reuse an existing workspace
+instead, set `FABRIC_WORKSPACE_ID` to its id before you run it.
 
 ### 1. Provision and build everything — `azd up`
 
@@ -96,7 +98,6 @@ From the repo root, run:
 ```bash
 az login
 azd auth login
-azd env set FABRIC_WORKSPACE_ID <your-fabric-workspace-guid>
 azd env set WEB_IQ_API_KEY <your-web-iq-preview-key>
 azd up
 ```

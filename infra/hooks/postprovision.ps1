@@ -27,10 +27,14 @@ Write-Host "Fabric capacity : $(if ($env:FABRIC_CAPACITY_ID) { $env:FABRIC_CAPAC
 
 # --- 1. Fabric data -----------------------------------------------------------------------------
 # The Fabric data scripts (the Caldova dataset) need a Fabric *workspace* on a capacity. A capacity
-# can be provisioned by Bicep (deployFabricCapacity=true), but a *workspace* is created via the
-# Fabric portal or REST API, not Bicep. Set FABRIC_WORKSPACE_ID to your workspace (existing, or one
-# you create on the new capacity), then this step provisions the data into it. Skipped when
-# FABRIC_WORKSPACE_ID is not set.
+# is provisioned by Bicep (deployFabricCapacity=true); a *workspace* is not an ARM resource, so we
+# create it here via the Fabric REST API when FABRIC_WORKSPACE_ID is not already set. Pass an
+# existing FABRIC_WORKSPACE_ID to reuse your own workspace instead.
+if (-not $env:FABRIC_WORKSPACE_ID) {
+    Write-Host "`n--- [1/5] Creating a Fabric workspace ---" -ForegroundColor Cyan
+    $env:FABRIC_WORKSPACE_ID = & "$repoRoot/infra/scripts/create-fabric-workspace.ps1" -SetAzdEnv
+}
+
 if ($env:FABRIC_WORKSPACE_ID) {
     Write-Host "`n--- [1/5] Provisioning Fabric data ---" -ForegroundColor Cyan
     Push-Location "$repoRoot/data/caldova-upstream"
@@ -46,7 +50,7 @@ if ($env:FABRIC_WORKSPACE_ID) {
         uv run python provision/fabric/create_fabric_data_agent.py
     } finally { Pop-Location }
 } else {
-    Write-Host "`n--- [1/5] Skipping Fabric data (set FABRIC_WORKSPACE_ID to provision it) ---" -ForegroundColor Yellow
+    Write-Host "`n--- [1/5] Skipping Fabric data (no Fabric workspace available) ---" -ForegroundColor Yellow
 }
 
 # --- 2. Seed the four IQ connections ------------------------------------------------------------
