@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import httpx
-from azure.identity import AzureDeveloperCliCredential
+from azure.identity import AzureCliCredential as AzureDeveloperCliCredential  # az is reliable inside the azd hook (azd auth token can time out there)
 from dotenv import load_dotenv, set_key
 
 REPO_ROOT = Path(__file__).parents[2]

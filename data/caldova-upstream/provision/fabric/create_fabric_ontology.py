@@ -10,7 +10,7 @@ import warnings
 from pathlib import Path
 
 from azure.core.exceptions import ResourceExistsError
-from azure.identity import AzureDeveloperCliCredential
+from azure.identity import AzureCliCredential as AzureDeveloperCliCredential  # az is reliable inside the azd hook (azd auth token can time out there)
 from dotenv import load_dotenv, set_key
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module=r"microsoft_fabric_api\..*")

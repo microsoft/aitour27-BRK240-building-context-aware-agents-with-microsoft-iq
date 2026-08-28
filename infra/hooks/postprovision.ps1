@@ -28,36 +28,19 @@ Write-Host "=== azd postprovision — building the Caldova demo ===" -Foreground
 Write-Host "Search endpoint : $env:AZURE_AI_SEARCH_SERVICE_ENDPOINT"
 Write-Host "Fabric capacity : $(if ($env:FABRIC_CAPACITY_ID) { $env:FABRIC_CAPACITY_NAME } else { '(none — using existing FABRIC_WORKSPACE_ID)' })"
 
-# --- 1. Fabric data -----------------------------------------------------------------------------
-# The Fabric data scripts (the Caldova dataset) need a Fabric *workspace* on a capacity. A capacity
-# is provisioned by Bicep (deployFabricCapacity=true); a *workspace* is not an ARM resource, so we
-# create it here via the Fabric REST API when FABRIC_WORKSPACE_ID is not already set. Pass an
-# existing FABRIC_WORKSPACE_ID to reuse your own workspace instead.
+# --- 1. Fabric workspace ------------------------------------------------------------------------
+# A Fabric *capacity* is provisioned by Bicep, but a *workspace* is not an ARM resource. Create it
+# here (via the Fabric REST API) unless FABRIC_WORKSPACE_ID already points to an existing workspace.
+# The Fabric *data* is provisioned by seed-and-connect.ps1 in step 2 (the canonical seeding pipeline).
 if (-not $env:FABRIC_WORKSPACE_ID) {
     Write-Host "`n--- [1/5] Creating a Fabric workspace ---" -ForegroundColor Cyan
     $env:FABRIC_WORKSPACE_ID = & "$repoRoot/infra/scripts/create-fabric-workspace.ps1" -SetAzdEnv
-}
-
-if ($env:FABRIC_WORKSPACE_ID) {
-    Write-Host "`n--- [1/5] Provisioning Fabric data ---" -ForegroundColor Cyan
-    Push-Location "$repoRoot/data/caldova-upstream"
-    try {
-        "FABRIC_TENANT_ID=$env:TENANT_ID", "FABRIC_WORKSPACE_ID=$env:FABRIC_WORKSPACE_ID" |
-            Set-Content -Path ".env" -Encoding ascii
-        uv sync --locked
-        uv run python provision/fabric/create_fabric_lakehouse.py
-        uv run python provision/fabric/create_fabric_ontology.py
-        uv run python "$repoRoot/infra/scripts/refresh-ontology-graph.py"   # build the ontology graph
-        uv run python provision/fabric/create_fabric_semantic_model.py
-        uv run python provision/fabric/create_fabric_reports.py
-        uv run python provision/fabric/create_fabric_data_agent.py
-    } finally { Pop-Location }
 } else {
-    Write-Host "`n--- [1/5] Skipping Fabric data (no Fabric workspace available) ---" -ForegroundColor Yellow
+    Write-Host "`n--- [1/5] Using existing Fabric workspace $env:FABRIC_WORKSPACE_ID ---" -ForegroundColor Cyan
 }
 
-# --- 2. Seed the four IQ connections ------------------------------------------------------------
-Write-Host "`n--- [2/5] Seeding the four IQ connections ---" -ForegroundColor Cyan
+# --- 2. Seed Fabric data + Foundry IQ KB, then create the four IQ connections --------------------
+Write-Host "`n--- [2/5] Seeding Fabric data, Foundry IQ KB, and the four IQ connections ---" -ForegroundColor Cyan
 $seedArgs = @{ SetAzdEnv = $true }
 if ($env:WEB_IQ_API_KEY) { $seedArgs.WebIqApiKey = $env:WEB_IQ_API_KEY }
 $conn = & "$repoRoot/infra/scripts/seed-and-connect.ps1" @seedArgs

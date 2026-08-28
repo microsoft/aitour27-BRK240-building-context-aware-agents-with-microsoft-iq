@@ -15,7 +15,7 @@ from typing import Any
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-from azure.identity import AzureDeveloperCliCredential
+from azure.identity import AzureCliCredential as AzureDeveloperCliCredential  # az is reliable inside the azd hook (azd auth token can time out there)
 from azure.storage.filedatalake import DataLakeServiceClient
 from dotenv import load_dotenv, set_key
 
