@@ -47,10 +47,13 @@ param agentName string = 'caldova-supply-autopilot'
 // the version-create response / `az` and deploys infra/a365/botservice.bicep).
 
 @description('Model name')
-param modelName string = 'gpt-chat-latest'
+param modelName string = 'gpt-5.4-mini'
 
 @description('Model version')
-param modelVersion string = '2026-05-28'
+param modelVersion string = '2026-03-17'
+
+@description('Model deployment capacity (thousands of tokens/min; keep within quota)')
+param modelCapacity int = 50
 
 // =================================================================================================
 // Provisioning toggles + identity
@@ -101,6 +104,7 @@ module project 'modules/project.bicep' = {
     containerRegistrySku: containerRegistrySku
     modelName: modelName
     modelVersion: modelVersion
+    modelCapacity: modelCapacity
   }
 }
 

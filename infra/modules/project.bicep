@@ -18,6 +18,12 @@ param publicNetworkAccess string = 'Enabled'
 param modelName string
 param modelVersion string
 
+@description('Model deployment capacity (thousands of tokens/min). Keep within your quota.')
+param modelCapacity int = 50
+
+@description('Model deployment SKU')
+param modelSkuName string = 'GlobalStandard'
+
 // Cognitive Services Account
 resource account 'Microsoft.CognitiveServices/accounts@2025-09-01' = {
   name: accountName
@@ -98,12 +104,24 @@ resource cogServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@
 }
 
 
-// NOTE: No model deployment is created in this hosting project. This project only
-// HOSTS the container; the agent makes its Responses calls against the EXISTING
-// the Foundry IQ project (IQ_PROJECT_ENDPOINT) using that project's model deployment.
-// Creating a GlobalStandard deployment here would consume quota for no reason (and
-// fails in regions without quota). modelName/modelVersion are retained only as a
-// baked image fallback (MODEL_NAME output).
+// Model deployment under the Foundry account. The Foundry Hosted Agent and the autopilot
+// make their Responses calls against this deployment (single-project model). Keep the
+// capacity within your subscription's quota for the model in this region.
+resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-04-01-preview' = {
+  parent: account
+  name: modelName
+  sku: {
+    name: modelSkuName
+    capacity: modelCapacity
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: modelName
+      version: modelVersion
+    }
+  }
+}
 
 
 output acrloginServer string = containerRegistry.properties.loginServer
@@ -111,3 +129,5 @@ output acrloginServer string = containerRegistry.properties.loginServer
 output foundryProjectEndpoint string = project.properties.endpoints['AI Foundry API']
 
 output foundryProjectPrincipalId string = project.identity.principalId
+
+output modelDeploymentName string = modelDeployment.name
