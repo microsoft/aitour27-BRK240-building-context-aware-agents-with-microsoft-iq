@@ -1,6 +1,9 @@
 name: caldova-supply-autopilot
 
 services:
+  # Agent 365 autopilot (demo 5) — Teams. Its container is built + versioned by the
+  # postprovision hook's scripts (auto-create blueprint, two passes); Agent 365 registration
+  # is the admin-gated infra/a365/publish-autopilot.ps1 step.
   caldova-supply-autopilot:
     project: ./src/autopilot
     host: azure.ai.agent
@@ -17,10 +20,31 @@ services:
       - protocol: activity
         version: 1.0.0
 
+  # Foundry Hosted Agent (demos 1-4) — Microsoft Foundry portal Playground. Deployed by the
+  # postprovision hook (src/foundry-hosted-agent/infra/scripts/deploy.ps1) after the toolbox +
+  # IQ connections exist. Declared here so both agents are represented in one place; the deploy
+  # runs via the hook's REST scripts because the azure.ai.agents azd extension was incompatible
+  # in this environment.
+  caldova-supply-hosted-agent:
+    project: ./src/foundry-hosted-agent/src
+    host: azure.ai.agent
+    language: python
+    codeConfiguration:
+      dependencyResolution: remote_build
+      entryPoint: main.py
+      runtime: python_3_13
+    kind: hosted
+    name: caldova-supply-hosted-agent
+    protocols:
+      - protocol: responses
+        version: 2.0.0
+
 hooks:
+  # One command: infra/main.bicep provisions the Azure resources, then this hook builds the rest
+  # of the demo end to end (Fabric data, IQ connections, toolbox + hosted agent, autopilot, emails).
   postprovision:
     shell: pwsh
-    run: ./infra/scripts/post-provision.ps1
+    run: ./infra/hooks/postprovision.ps1
     interactive: true
     continueOnError: false
 

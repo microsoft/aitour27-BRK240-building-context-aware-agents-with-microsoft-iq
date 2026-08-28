@@ -78,26 +78,27 @@ Two agents over one set of Microsoft IQ connections:
   Publishing and approving the autopilot in Agent 365 (demo 5) requires a
   **Global Administrator** in that tenant.
 
-**Platform services you must already have**
+**`azd up` provisions and builds most of it**
 
-You provide these existing services; the setup steps below create all the Caldova demo
-content *inside* them. None of these are created for you.
+Running `azd up` (step 1 below) provisions the Azure resources with Bicep and then runs a
+postprovision hook that builds the whole demo:
 
-- An **Azure AI Search** service — the Foundry IQ knowledge base is created here.
-- A **Microsoft Fabric** workspace on an active **capacity** — the Fabric tables, ontology,
-  semantic model, and Data Agent are created here.
-- A **Microsoft Foundry** project with a reasoning model deployment (e.g. `gpt-5.4-mini`) —
-  it holds the four IQ connections and hosts the agent.
-- A **Web IQ** (`api.microsoft.ai`) subscription key. **Web IQ is in private preview** —
-  you must have been granted access to the preview to obtain a key.
+- **Provisions** (Bicep): the Microsoft Foundry account + project, a Container Registry, an
+  **Azure AI Search** service, and (optionally) a **Microsoft Fabric capacity**.
+- **Builds** (postprovision hook): the Fabric data (lakehouse, ontology + graph, semantic
+  model, report, `SupplierDataAgent`), the four Microsoft IQ connections, the
+  `caldova-supply-tools` toolbox + the **Foundry Hosted Agent**, the **autopilot** container
+  + version, and seeds the demo emails.
 
-**What the setup creates for you** (in the steps below)
+**You still provide**
 
-- In Fabric: the `CaldovaSupplierAnalytics` lakehouse, the ontology, the `SupplierSM`
-  semantic model, a report, and the published `SupplierDataAgent`.
-- In the Foundry project: the four Microsoft IQ connections, the `caldova-supply-tools`
-  toolbox, and the deployed **Foundry Hosted Agent**.
-- The **Agent 365 autopilot** (via `azd up` + the Agent 365 publish/hire steps).
+- The **Azure subscription** and **M365 licenses** above.
+- A **Web IQ** private-preview key (`WEB_IQ_API_KEY`) — Web IQ can't be auto-provisioned.
+- A **Microsoft Fabric workspace** on the capacity, and its id (`FABRIC_WORKSPACE_ID`) — a
+  Fabric *capacity* is provisioned by Bicep, but a *workspace* is created in the Fabric
+  portal/REST API (not Bicep), so you create the workspace on the capacity and pass its id.
+- The **admin-gated Agent 365 steps** for demo 5 (approve the blueprint, hire in Teams) —
+  these require a Global Administrator and can't be fully automated.
 
 **Tools**
 
@@ -108,80 +109,63 @@ content *inside* them. None of these are created for you.
 
 Full prerequisites and permissions detail: [`../docs/setup.md`](../docs/setup.md).
 
-### 1. Provision the Fabric data
+### 1. One command — `azd up`
 
-The Caldova dataset lives in [`../data/caldova-upstream/`](../data/caldova-upstream/). From
-that folder, create a `.env` with `FABRIC_TENANT_ID` and `FABRIC_WORKSPACE_ID` (your
-existing workspace), sign in (`azd auth login` / `az login`), then `uv sync`. Run the
-scripts in order:
+From the repo root, authenticate and run the one command. Provide your Web IQ key and
+Fabric workspace so the postprovision hook can seed everything:
 
 ```bash
-uv run python provision/fabric/create_fabric_lakehouse.py
-uv run python provision/fabric/create_fabric_ontology.py
-# Build the ontology graph — REQUIRED, or ontology questions time out:
-uv run python ../../infra/scripts/refresh-ontology-graph.py
-uv run python provision/fabric/create_fabric_semantic_model.py
-uv run python provision/fabric/create_fabric_reports.py
-uv run python provision/fabric/create_fabric_data_agent.py
+az login
+azd auth login
+
+# Inputs the postprovision hook needs (create the Fabric workspace on your capacity first):
+azd env set FABRIC_WORKSPACE_ID <your-fabric-workspace-guid>
+azd env set WEB_IQ_API_KEY      <your-web-iq-preview-key>
+
+azd up
 ```
 
-This creates the `CaldovaSupplierAnalytics` lakehouse, the `CaldovaMedicinalProductOntology`
-ontology, the `SupplierSM` semantic model, a report, and the published `SupplierDataAgent`.
-Details: [`../data/caldova-upstream/provision/fabric/README.md`](../data/caldova-upstream/provision/fabric/README.md)
-and [`../docs/ontology.md`](../docs/ontology.md).
+`azd up` provisions the Azure resources (Foundry + Container Registry + Azure AI Search,
+and a Fabric capacity if `deployFabricCapacity=true`), then the postprovision hook
+([`../infra/hooks/postprovision.ps1`](../infra/hooks/postprovision.ps1)) builds the Fabric
+data (with the required ontology **graph refresh**), seeds the four IQ connections, creates
+the toolbox + Foundry Hosted Agent, builds the autopilot, and seeds the demo emails.
 
-> **The graph refresh is the gotcha.** An ontology's backing graph starts **empty**; until
-> it is refreshed, the Data Agent's ontology questions **hang ~5 min and fail**. If that
-> happens, re-run `refresh-ontology-graph.py` (or in the portal: the `…_graph` item →
-> **… → Schedule → Refresh now**), then re-run `create_fabric_data_agent.py`.
+> **The ontology graph refresh is a known gotcha** — the hook runs it, but if an ontology
+> question later **hangs ~5 min and fails**, re-run
+> [`../infra/scripts/refresh-ontology-graph.py`](../infra/scripts/refresh-ontology-graph.py)
+> (or in the portal: the `…_graph` item → **… → Schedule → Refresh now**), then re-run the
+> Data Agent step. See [`../docs/ontology.md`](../docs/ontology.md).
 
-### 2. Seed the four IQ connections
+### 2. Finish the autopilot (admin-gated, demo 5)
 
-Register the four Microsoft IQ connections in your Foundry IQ project — **Foundry IQ**
-(`caldova-supply-kb`, Azure AI Search KB), **Fabric IQ** (`caldova-supply-dataagent`),
-**Work IQ** (`WorkIQ`), and **Web IQ** (`WebIQ`). This also seeds the Caldova document
-corpus into the knowledge base. See [`../infra/README.md`](../infra/README.md).
-
-### 3. Deploy the Foundry Hosted Agent (demos 1–4)
-
-From [`../src/foundry-hosted-agent/`](../src/foundry-hosted-agent/):
-
-```powershell
-# Create the one toolbox (all four IQs; Fabric + Work IQ via UserEntraToken → per-user OBO)
-./infra/scripts/create-toolbox.ps1  # pass your project + Fabric workspace/data-agent ids
-
-# Build the image + deploy the hosted agent
-./infra/scripts/deploy.ps1
-```
-
-The agent is a single `FoundryToolbox` reference; Microsoft Foundry runs the loop, so each
-IQ call shows in the **Traces** tab. Details:
-[`../src/foundry-hosted-agent/README.md`](../src/foundry-hosted-agent/README.md).
-
-### 4. Deploy + hire the autopilot (demo 5)
-
-From the repo root: `azd up` provisions the hosting project + builds and creates the
-autopilot; then register it in Agent 365, approve the blueprint, and **hire an instance in
-Teams**. Full walkthrough (with the admin approval and grant steps):
+`azd up` builds the autopilot container + version; the **Agent 365 registration** is a
+separate admin step. As a **Global Administrator**: run
+[`../infra/a365/publish-autopilot.ps1`](../infra/a365/publish-autopilot.ps1), approve the
+blueprint in the admin center, and **hire an instance in Teams**. Full walkthrough:
 [`../docs/setup.md`](../docs/setup.md) and [`../instructions/README.md`](../instructions/README.md).
 
-### 5. Seed the demo mailboxes
+### 3. Seed the demo mailboxes
 
-Two distinct escalation emails make the "reads *my* mailbox vs *its own* mailbox" story land:
+The hook seeds **your** mailbox automatically; the **agent** mailbox is seeded after the
+autopilot is hired. Two distinct escalations make the "reads *my* mailbox vs *its own*
+mailbox" story land:
 
-- **Your** mailbox (demo 4, Playground, on-behalf-of you): a cold-chain escalation from
-  **Priya Nair — SHP-9021 (Brightline Labs)**. Send it to yourself.
-- **The agent's** mailbox (demo 5, Teams): a cold-chain escalation from
-  **Maria Garcia — SHP-1234 (Alvexa)**.
+- **Your** mailbox (demo 4, Playground, on-behalf-of you): **Priya Nair — SHP-9021
+  (Brightline Labs)**.
+- **The agent's** mailbox (demo 5, Teams): **Maria Garcia — SHP-1234 (Alvexa)** — re-run
+  [`../infra/hooks/seed-emails.ps1`](../infra/hooks/seed-emails.ps1) `-AgentMailbox <agent-upn>`
+  after hiring.
 
-### 6. Pre-flight checks (T-10 min, before recording)
+### 4. Pre-flight checks (T-10 min, before recording)
 
-- All four IQ connections healthy in the Foundry IQ project.
+- All four IQ connections healthy in the Foundry project.
 - **Warm up Fabric IQ — both sources**: ask one OTIF question *and* one ontology question
   (e.g. "Which medicinal products contain Caldovexine?") so neither cold-starts on stage.
 - Hosted agent reachable in the Playground; autopilot hired and responding in Teams.
 - After any redeploy, retire the old agent version so the Playground/Teams roll to `@latest`.
 
+## Key messages
 
 
 1. **Context is the differentiator** — the four IQs give agents trusted enterprise grounding.
