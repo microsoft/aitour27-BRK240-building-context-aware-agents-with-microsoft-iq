@@ -50,7 +50,7 @@ def main() -> int:
     workspace_id = require("FABRIC_WORKSPACE_ID")
     ontology_id = require("FABRIC_ONTOLOGY_ID")
 
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60)
     try:
         token = credential.get_token(f"{FABRIC_API}/.default").token
     finally:

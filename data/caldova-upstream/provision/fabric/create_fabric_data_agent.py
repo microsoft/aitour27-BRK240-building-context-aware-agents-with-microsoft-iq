@@ -265,7 +265,7 @@ def deploy() -> None:
     tenant_id = require_env("FABRIC_TENANT_ID")
     workspace_id = require_env("FABRIC_WORKSPACE_ID")
     ontology_id = require_env("FABRIC_ONTOLOGY_ID")
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60)
     try:
         token = credential.get_token(FABRIC_SCOPE).token
     finally:

@@ -93,7 +93,7 @@ def main() -> None:
     load_dotenv(ENV_PATH, override=True)
     tenant_id = require_env("FABRIC_TENANT_ID")
     workspace_id = require_env("FABRIC_WORKSPACE_ID")
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60)
     try:
         client = FabricClient(credential)
         semantic_model = find_semantic_model(client, workspace_id)
