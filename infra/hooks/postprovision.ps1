@@ -24,6 +24,10 @@ $ErrorActionPreference = "Stop"
 # chain instead of silently continuing (PowerShell does not do this by default).
 $PSNativeCommandUseErrorActionPreference = $true
 $repoRoot = Resolve-Path "$PSScriptRoot/../.."
+# Capture the autopilot's agent name now: step 3 (the hosted-agent deploy) loads that agent's
+# OWN azd env into this process, which overrides AGENT_NAME + blueprint/instance ids. We restore
+# this before the autopilot build in step 4 so its version isn't created under the wrong agent.
+$autopilotAgentName = $env:AGENT_NAME
 Write-Host "=== azd postprovision — building the Caldova demo ===" -ForegroundColor Cyan
 Write-Host "Search endpoint : $env:AZURE_AI_SEARCH_SERVICE_ENDPOINT"
 Write-Host "Fabric capacity : $(if ($env:FABRIC_CAPACITY_ID) { $env:FABRIC_CAPACITY_NAME } else { '(none — using existing FABRIC_WORKSPACE_ID)' })"
@@ -81,6 +85,10 @@ if (-not $fabricDataAgentId) { throw "Could not read the Fabric Data Agent id fr
 # Builds the image + creates the autopilot version (auto-create blueprint, two passes). The
 # Agent 365 registration/publish (admin-gated) still runs afterwards via infra/a365/publish-autopilot.ps1.
 Write-Host "`n--- [4/5] Agent 365 autopilot (build + version-create) ---" -ForegroundColor Cyan
+# Undo the hosted-agent env that step 3 loaded into this process, so the autopilot builds
+# under its own name and auto-creates its own blueprint rather than reusing the hosted agent's.
+$env:AGENT_NAME = $autopilotAgentName
+Remove-Item Env:AGENT_BLUEPRINT_NAME, Env:AGENT_BLUEPRINT_CLIENT_ID, Env:AGENT_INSTANCE_CLIENT_ID, Env:BLUEPRINT_CLIENT_ID -ErrorAction SilentlyContinue
 & "$repoRoot/infra/scripts/post-provision.ps1"
 
 # --- 5. Seed the demo mailboxes -----------------------------------------------------------------
