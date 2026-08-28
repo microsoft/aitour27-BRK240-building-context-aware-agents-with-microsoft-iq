@@ -68,6 +68,9 @@ param deploySearch bool = true
 @description('Search service name')
 param searchServiceName string = '${environmentName}search'
 
+@description('Location for the Azure AI Search service. Empty = same as the main location; override to a region with Search capacity.')
+param searchLocation string = ''
+
 @description('Provision a Microsoft Fabric capacity for Fabric IQ (costs money while running)')
 param deployFabricCapacity bool = false
 
@@ -113,7 +116,7 @@ module search 'modules/search.bicep' = if (deploySearch) {
   name: 'search-deployment'
   params: {
     searchServiceName: searchServiceName
-    location: location
+    location: empty(searchLocation) ? location : searchLocation
     userPrincipalId: principalId
     foundryProjectPrincipalId: project.outputs.foundryProjectPrincipalId
     tags: tags

@@ -20,6 +20,9 @@
 # environment-dependent). Each step is guarded so a partial/opt-in run is possible.
 # =================================================================================================
 $ErrorActionPreference = "Stop"
+# Fail fast when a native command (python/az/uv) exits non-zero, so a broken step aborts the
+# chain instead of silently continuing (PowerShell does not do this by default).
+$PSNativeCommandUseErrorActionPreference = $true
 $repoRoot = Resolve-Path "$PSScriptRoot/../.."
 Write-Host "=== azd postprovision — building the Caldova demo ===" -ForegroundColor Cyan
 Write-Host "Search endpoint : $env:AZURE_AI_SEARCH_SERVICE_ENDPOINT"

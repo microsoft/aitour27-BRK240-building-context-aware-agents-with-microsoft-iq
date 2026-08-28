@@ -14,6 +14,9 @@
     "deploySearch": {
       "value": "${DEPLOY_SEARCH=true}"
     },
+    "searchLocation": {
+      "value": "${SEARCH_LOCATION=}"
+    },
     "deployFabricCapacity": {
       "value": "${DEPLOY_FABRIC_CAPACITY=false}"
     }

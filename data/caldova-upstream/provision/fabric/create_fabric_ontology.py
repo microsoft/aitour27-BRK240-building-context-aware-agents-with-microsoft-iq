@@ -479,7 +479,7 @@ def deploy() -> None:
                 definition=build_definition(workspace_id, lakehouse.id)
             ),
             update_metadata=False,
-        ).result()
+        ).result
     finally:
         credential.close()
 

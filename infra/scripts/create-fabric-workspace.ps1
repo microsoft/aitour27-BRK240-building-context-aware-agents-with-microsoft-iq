@@ -11,7 +11,7 @@
 [CmdletBinding()]
 param(
     [string]$WorkspaceName = "caldova-supply",
-    [string]$CapacityName  = $env:FABRIC_CAPACITY_NAME,
+    [string]$CapacityName  = $(if ($env:FABRIC_EXISTING_CAPACITY_NAME) { $env:FABRIC_EXISTING_CAPACITY_NAME } else { $env:FABRIC_CAPACITY_NAME }),
     [switch]$SetAzdEnv
 )
 $ErrorActionPreference = "Stop"
