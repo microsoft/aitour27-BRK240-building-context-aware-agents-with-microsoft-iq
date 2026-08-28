@@ -61,7 +61,9 @@ Two agents over one set of Microsoft IQ connections:
   (`caldova-supply-tools`) that Microsoft Foundry runs with **auth passthrough**, so
   Fabric IQ and Work IQ resolve as the **signed-in user**.
 - **Agent 365 autopilot** (`caldova-supply-autopilot`) — used in **demo 5** in Microsoft
-  Teams, as a governed digital worker that can also reply from its own mailbox.
+  Teams. It is a governed **Agent 365 autopilot with its own identity** — it reports to
+  you, is managed in the admin center, and acts on your behalf (including replying from
+  its own mailbox).
 
 ### Prerequisites
 
@@ -86,7 +88,8 @@ content *inside* them. None of these are created for you.
   semantic model, and Data Agent are created here.
 - A **Microsoft Foundry** project with a reasoning model deployment (e.g. `gpt-5.4-mini`) —
   it holds the four IQ connections and hosts the agent.
-- A **Web IQ** (`api.microsoft.ai`) subscription key.
+- A **Web IQ** (`api.microsoft.ai`) subscription key. **Web IQ is in private preview** —
+  you must have been granted access to the preview to obtain a key.
 
 **What the setup creates for you** (in the steps below)
 
