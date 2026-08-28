@@ -28,16 +28,6 @@ The full session presentation. This breakout is divided into an intro, the five 
 and a wrap-up. Add the recording link above, then fill the timings below after the final
 cut.
 
-| Time | Description |
-|---|---|
-| 0:00 – 0:00 | Intro and overview |
-| 0:00 – 0:00 | Demo 1 — Web IQ |
-| 0:00 – 0:00 | Demo 2 — Foundry IQ |
-| 0:00 – 0:00 | Demo 3 — Fabric IQ |
-| 0:00 – 0:00 | Demo 4 — Work IQ |
-| 0:00 – 0:00 | Demo 5 — All four IQs + the autopilot |
-| 0:00 – 0:00 | Wrap up and Q&A |
-
 ## Demo recordings
 
 One clip per demo, in two versions: a **clean capture** with no audio (for you to
@@ -46,28 +36,12 @@ and prompts for each demo are in the linked instructions.
 
 | # | Demo | Instructions | Clip — no audio | Clip — voice-over |
 |---|---|---|---|---|
-| 1 | Web IQ | [web-iq.md](demos/web-iq.md) | _add video_ | _add video_ |
-| 2 | Foundry IQ | [foundry-iq.md](demos/foundry-iq.md) | _add video_ | _add video_ |
-| 3 | Fabric IQ | [fabric-iq.md](demos/fabric-iq.md) | _add video_ | _add video_ |
-| 4 | Work IQ | [work-iq.md](demos/work-iq.md) | _add video_ | _add video_ |
-| 5 | All four IQs + the autopilot | [all-4-iqs-autopilot.md](demos/all-4-iqs-autopilot.md) | _add video_ | _add video_ |
+| 1 | Web IQ | [Demo instructions](demos/web-iq.md) | [Demo - no audio](https://github.com/user-attachments/assets/87810d23-58c5-45c8-8a29-9b3d238a8b83) | [Demo - with audio](https://github.com/user-attachments/assets/d88e353a-232b-4add-a522-672920218b37) |
+| 2 | Foundry IQ | [Demo instructions](demos/foundry-iq.md) | [Demo - no audio](https://github.com/user-attachments/assets/58deeeea-875b-4446-88d1-3672f92cfa48) | [Demo - with audio](https://github.com/user-attachments/assets/2b7bd491-5c01-44c4-a027-ad00ccbcd3b4) |
+| 3 | Fabric IQ | [Demo instructions](demos/fabric-iq.md) | [Demo - no audio](https://github.com/user-attachments/assets/13272e5a-1076-4074-8a80-b9cb8832510f) | [Demo - with audio](https://github.com/user-attachments/assets/56e91971-3fa6-420f-a378-51223270ba64) |
+| 4 | Work IQ | [Demo instructions](demos/work-iq.md) | [Demo - no audio](https://github.com/user-attachments/assets/4d3c27e2-bdca-4f6f-9908-55655a86e881) | [Demo - with audio](https://github.com/user-attachments/assets/576f6400-9062-4b71-a614-aa468fdbc7f0) |
+| 5 | All four IQs + the autopilot | [Demo instructions](demos/all-4-iqs-autopilot.md) | [Demo - no audio](https://github.com/user-attachments/assets/f4b40b09-ec0c-494c-bf67-dfc6402a1b58) | [Demo - with audio](https://github.com/user-attachments/assets/78871168-b4a1-4408-9b20-1869f538ce90) |
 
-> To add a clip, edit this file in the GitHub web editor and **drag the video into a
-> cell** (or paste it). GitHub uploads it to `user-attachments` and renders an inline
-> player — replace the `_add video_` placeholder. Keep each file under GitHub's upload
-> limit (~100 MB); host anything larger externally and link it instead.
-
-## Run of show (~20 min demo block)
-
-| Time | Demo | IQ | What you show |
-|:---|:---|:---|:---|
-| 0:00 | Frame | — | "No shared context → wrong decisions." Introduce the four IQs + Caldova. |
-| 2:00 | [Web IQ](demos/web-iq.md) | **Web IQ** | Live-web grounding in the Playground; the Web IQ call in Traces; the code. |
-| 5:00 | [Foundry IQ](demos/foundry-iq.md) | **Foundry IQ** | Cited policy answer; Foundry IQ in Traces; the knowledge base; the code. |
-| 8:00 | [Fabric IQ](demos/fabric-iq.md) | **Fabric IQ** | Numbers *and* the medicinal-product ontology via the Data Agent; Traces; the code. |
-| 12:00 | [Work IQ](demos/work-iq.md) | **Work IQ** | Reads your real mailbox on-behalf-of you; Work IQ in Traces; Outlook; the code. |
-| 15:00 | [All four IQs + the autopilot](demos/all-4-iqs-autopilot.md) | **All four** | The governed autopilot in Teams — all four IQs, replies from its mailbox, admin governance. |
-| 19:00 | Close | — | "Amplify your intelligence — build one agent, then the fleet on the same IQ." |
 
 ## Key messages
 
