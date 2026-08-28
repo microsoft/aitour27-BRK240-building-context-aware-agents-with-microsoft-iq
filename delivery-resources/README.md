@@ -1,13 +1,15 @@
 # Delivery Resources
 
 Presenter and train-the-trainer materials for **BRK240 — Building context-aware agents with
-Microsoft IQ platform** (FY27 Caldova, Chapter 01 "Ground").
+the Microsoft IQ platform**. The demo follows **Caldova Pharmaceuticals**, a fictional global
+pharma company, as its supply-assurance analyst handles a cold-chain escalation — grounding
+every decision across the four Microsoft IQs (Web, Foundry, Fabric, and Work IQ).
 
 ## Delivery checklist
 
 - Review the session [README](../README.md) and attendee [instructions](../instructions/README.md)
 - Review the [demo flows](demos/README.md) (five per-demo run of show + prompts)
-- Open the deck (Caldova FY27 storyline)
+- Open the deck (Caldova supply-assurance storyline)
 - Set up the environment top to bottom (see [Prepare your environment](#prepare-your-environment) below)
 - Validate the environment: both agents deployed, all four IQ connections healthy, Caldova
   corpus seeded (Foundry IQ KB + Fabric IQ), demo mailboxes seeded
@@ -17,7 +19,7 @@ Microsoft IQ platform** (FY27 Caldova, Chapter 01 "Ground").
 
 | Item | Link | Notes |
 |---|---|---|
-| Delivery deck | _add link_ | Caldova FY27 storyline (Chapter 01 "Ground") |
+| Delivery deck | _add link_ | The session delivery slides (Caldova supply-assurance storyline) |
 | Full session recording | _add link_ | The full session presentation |
 | Demo flows | [demos/README.md](demos/README.md) | Five per-demo walkthroughs + prompts |
 | Setup / deploy | [Prepare your environment](#prepare-your-environment) | Full inline setup (also in [../docs/setup.md](../docs/setup.md)) |
@@ -65,10 +67,14 @@ Two agents over one set of Microsoft IQ connections:
 
 **Accounts and licenses**
 
-- An **Azure subscription** where you are **Owner**.
+- An **Azure subscription** with rights to **create resources and assign roles** — this
+  means **Owner**, or **Contributor + User Access Administrator**. Contributor alone is
+  not enough, because the setup scripts create role assignments (ACR pull, Cognitive
+  Services User, Fabric workspace membership, OAuth2 grants).
 - A **Microsoft 365 tenant** with **Agent 365 + Microsoft Copilot** licenses, enrolled in
-  the [Frontier preview program](https://adoption.microsoft.com/en-us/copilot/frontier-program/)
-  (required to publish a Foundry agent to Agent 365).
+  the [Frontier preview program](https://adoption.microsoft.com/en-us/copilot/frontier-program/).
+  Publishing and approving the autopilot in Agent 365 (demo 5) requires a
+  **Global Administrator** in that tenant.
 
 **Pre-existing Azure/Fabric resources** (you bring these; `azd up` does not create them)
 
