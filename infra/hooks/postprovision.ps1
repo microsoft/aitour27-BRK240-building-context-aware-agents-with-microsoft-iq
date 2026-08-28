@@ -52,7 +52,29 @@ if ($conn.WebIqConnectionId) { $env:WEB_IQ_CONNECTION_ID = $conn.WebIqConnection
 
 # --- 3. Foundry Hosted Agent (demos 1–4) --------------------------------------------------------
 Write-Host "`n--- [3/5] Toolbox + Foundry Hosted Agent ---" -ForegroundColor Cyan
-& "$repoRoot/src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1"
+
+# In this single-project setup the IQ connections live in the same project that hosts the
+# agent, so default FOUNDRY_PROJECT_ENDPOINT to the hosting project when it isn't set.
+if (-not $env:FOUNDRY_PROJECT_ENDPOINT) { $env:FOUNDRY_PROJECT_ENDPOINT = $env:AZURE_AI_PROJECT_ENDPOINT }
+
+# create-toolbox.ps1 has mandatory parameters (it would block on an interactive prompt if
+# they were missing). Derive them from the seeded Fabric connection and pass them explicitly.
+if ($env:FABRIC_CONNECTION_ID -notmatch '^(?<acct>/subscriptions/.+?/accounts/[^/]+)/projects/') {
+    throw "Could not derive the AI account resource id from FABRIC_CONNECTION_ID '$($env:FABRIC_CONNECTION_ID)'."
+}
+$accountResourceId = $Matches.acct
+$fabricConnName = ($env:FABRIC_CONNECTION_ID -replace '.*/connections/', '')
+$fabricSecrets = az rest --method post `
+    --url "https://management.azure.com$accountResourceId/connections/$fabricConnName/listSecrets?api-version=2025-06-01" |
+    ConvertFrom-Json
+$fabricDataAgentId = $fabricSecrets.properties.credentials.keys.'artifact-id'
+if (-not $fabricDataAgentId) { throw "Could not read the Fabric Data Agent id from connection '$fabricConnName'." }
+
+& "$repoRoot/src/foundry-hosted-agent/infra/scripts/create-toolbox.ps1" `
+    -ProjectEndpoint  $env:FOUNDRY_PROJECT_ENDPOINT `
+    -AccountResourceId $accountResourceId `
+    -FabricWorkspaceId $env:FABRIC_WORKSPACE_ID `
+    -FabricDataAgentId $fabricDataAgentId
 & "$repoRoot/src/foundry-hosted-agent/infra/scripts/deploy.ps1"
 
 # --- 4. Agent 365 autopilot (demo 5) ------------------------------------------------------------
