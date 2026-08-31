@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import httpx
-from azure.identity import AzureDeveloperCliCredential
+from azure.identity import AzureCliCredential as AzureDeveloperCliCredential  # az is reliable inside the azd hook (azd auth token can time out there)
 from dotenv import load_dotenv, set_key
 
 REPO_ROOT = Path(__file__).parents[2]
@@ -265,7 +265,7 @@ def deploy() -> None:
     tenant_id = require_env("FABRIC_TENANT_ID")
     workspace_id = require_env("FABRIC_WORKSPACE_ID")
     ontology_id = require_env("FABRIC_ONTOLOGY_ID")
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60)
     try:
         token = credential.get_token(FABRIC_SCOPE).token
     finally:

@@ -15,7 +15,7 @@ from typing import Any
 
 import pyarrow as pa
 import pyarrow.parquet as pq
-from azure.identity import AzureDeveloperCliCredential
+from azure.identity import AzureCliCredential as AzureDeveloperCliCredential  # az is reliable inside the azd hook (azd auth token can time out there)
 from azure.storage.filedatalake import DataLakeServiceClient
 from dotenv import load_dotenv, set_key
 
@@ -637,7 +637,7 @@ def upload_table(
             mode="Overwrite",
             format_options=Parquet(),
         ),
-    ).result()
+    ).result
 
 
 def delta_schema(
@@ -722,19 +722,28 @@ def deploy(tables: dict[str, pa.Table]) -> None:
     load_dotenv(ENV_PATH, override=True)
     tenant_id = require_env("FABRIC_TENANT_ID")
     workspace_id = require_env("FABRIC_WORKSPACE_ID")
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60)
     try:
         client = FabricClient(credential)
         lakehouse = find_lakehouse(client, workspace_id)
         if lakehouse is None:
             print(f"Creating lakehouse '{LAKEHOUSE_NAME}'...")
-            lakehouse = client.lakehouse.items.begin_create_lakehouse(
+            client.lakehouse.items.begin_create_lakehouse(
                 workspace_id,
                 CreateLakehouseRequest(
                     display_name=LAKEHOUSE_NAME,
                     description="Synthetic supplier performance analytics for Caldova.",
                 ),
-            ).result()
+            ).result
+            # The SDK's begin_* polls on a background thread, so wait for the new
+            # lakehouse to appear in the workspace before using it.
+            for _ in range(30):
+                lakehouse = find_lakehouse(client, workspace_id)
+                if lakehouse is not None:
+                    break
+                time.sleep(2)
+            if lakehouse is None:
+                raise RuntimeError(f"Lakehouse '{LAKEHOUSE_NAME}' did not appear after creation.")
         else:
             print(f"Reusing lakehouse '{LAKEHOUSE_NAME}'.")
 
@@ -747,15 +756,19 @@ def deploy(tables: dict[str, pa.Table]) -> None:
             upload_table(
                 credential, client, workspace_id, lakehouse.id, table_name, table
             )
+
+        missing = wait_for_tables(client, workspace_id, lakehouse.id, set(tables))
+        if missing:
+            raise RuntimeError(f"Fabric did not expose loaded tables: {sorted(missing)}")
+
+        # Validate persisted Delta schemas only after the tables are registered in the
+        # catalog, so the _delta_log paths are guaranteed to exist.
+        for table_name, table in tables.items():
             validate_delta_schema(
                 table.schema,
                 delta_schema(credential, workspace_id, lakehouse.id, table_name),
                 table_name,
             )
-
-        missing = wait_for_tables(client, workspace_id, lakehouse.id, set(tables))
-        if missing:
-            raise RuntimeError(f"Fabric did not expose loaded tables: {sorted(missing)}")
     finally:
         credential.close()
 

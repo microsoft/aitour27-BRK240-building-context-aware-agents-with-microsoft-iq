@@ -1,41 +1,43 @@
 # Delivery Resources
 
+## How to deliver this session
+
+🥇 Thanks for delivering this session!
+
 Presenter and train-the-trainer materials for **BRK240 — Building context-aware agents with
 the Microsoft IQ platform**. The demo follows **Caldova Pharmaceuticals**, a fictional global
-pharma company, as its supply-assurance analyst handles a cold-chain escalation — grounding
-every decision across the four Microsoft IQs (Web, Foundry, Fabric, and Work IQ).
+pharmaceutical company, as its supply-assurance analyst handles a cold-chain escalation and
+grounds every decision across the four Microsoft IQs — Web IQ, Foundry IQ, Fabric IQ, and
+Work IQ.
 
-## Delivery checklist
+Before you deliver the session, please:
 
-- Review the session [README](../README.md) and attendee [instructions](../instructions/README.md)
-- Review the [demo flows](demos/README.md) (five per-demo run of show + prompts)
-- Open the deck (Caldova supply-assurance storyline)
-- Set up the environment top to bottom (see [Prepare your environment](#prepare-your-environment) below)
-- Validate the environment: both agents deployed, all four IQ connections healthy, Caldova
-  corpus seeded (Foundry IQ KB + Fabric IQ), demo mailboxes seeded
-- Warm the Fabric Data Agent — both sources — with one query each before going live
+1. Read this document and every linked resource in full.
+2. Watch the full session recording and the per-demo clips.
+3. Open the delivery deck and review the Caldova supply-assurance storyline.
+4. Set up the environment end to end (see the **Prepare Your Environment** section below),
+   then validate it: both agents deployed, all four Microsoft IQ connections healthy, the
+   Caldova content seeded (Foundry IQ knowledge base and Fabric IQ), and the demo mailboxes
+   seeded.
+5. Warm up the Fabric Data Agent (semantic model and ontology) with one query each before
+   going live.
 
-## Core materials
+## 📁 File Summary
 
-| Item | Link | Notes |
+| Resource | Link | Description |
 |---|---|---|
-| Delivery deck | _add link_ | The session delivery slides (Caldova supply-assurance storyline) |
+| Session delivery deck | _add link_ | The session delivery slides (Caldova supply-assurance storyline) |
 | Full session recording | _add link_ | The full session presentation |
-| Demo flows | [demos/README.md](demos/README.md) | Five per-demo walkthroughs + prompts |
-| Setup / deploy | [Prepare your environment](#prepare-your-environment) | Full inline setup (also in [../docs/setup.md](../docs/setup.md)) |
+| Demo flows | [demos/README.md](demos/README.md) | Five per-demo walkthroughs and prompts |
+| Setup and deploy | [Prepare Your Environment](#-prepare-your-environment) | Full inline setup (also in [../docs/setup.md](../docs/setup.md)) |
 | Attendee instructions | [../instructions/README.md](../instructions/README.md) | Start here for the guided path |
 
-## Full session recording
+## 🖥️ Demo Videos
 
-The full session presentation. This breakout is divided into an intro, the five demos,
-and a wrap-up. Add the recording link above, then fill the timings below after the final
-cut.
-
-## Demo recordings
-
-One clip per demo, in two versions: a **clean capture** with no audio (for you to
-voice over live) and a **voice-over** version with narration. The written run of show
-and prompts for each demo are in the linked instructions.
+Select the demo instructions to see how to deliver each demo. Each demo has two clips: a
+**clean capture** with no audio (for you to voice over live) and a **voice-over** version
+with narration. The written run of show and prompts for each demo are in the linked
+instructions.
 
 | # | Demo | Instructions | Clip — no audio | Clip — voice-over |
 |---|---|---|---|---|
@@ -46,13 +48,13 @@ and prompts for each demo are in the linked instructions.
 | 5 | All four IQs + the autopilot | [Demo instructions](demos/all-4-iqs-autopilot.md) | [Demo - no audio](https://github.com/user-attachments/assets/f4b40b09-ec0c-494c-bf67-dfc6402a1b58) | [Demo - with audio](https://github.com/user-attachments/assets/78871168-b4a1-4408-9b20-1869f538ce90) |
 
 
-## Prepare your environment
+## 🏋️ Prepare Your Environment
 
 Everything needed to stand this demo up, in order. The scripts referenced here live in
 the repo; the detailed reference for each step is linked inline. Set aside ~60–90 minutes
 for a first run (Fabric provisioning and the Agent 365 hire are the slow parts).
 
-### What this demo runs on
+### What these demos run on
 
 Two agents over one set of Microsoft IQ connections:
 
@@ -60,131 +62,79 @@ Two agents over one set of Microsoft IQ connections:
   Microsoft Foundry portal Playground. All four IQs come through **one Foundry toolbox**
   (`caldova-supply-tools`) that Microsoft Foundry runs with **auth passthrough**, so
   Fabric IQ and Work IQ resolve as the **signed-in user**.
-- **Agent 365 autopilot** (`caldova-supply-autopilot`) — used in **demo 5** in Microsoft
-  Teams, as a governed digital worker that can also reply from its own mailbox.
+- **Agent 365 autopilot** (`caldova-supply-autopilot`) — used in **demo 5** in Microsoft Teams.
+  It is a governed agent with its own Agent 365 identity and its own mailbox. You manage it in
+  the Microsoft 365 admin center, and it works under its own identity, not yours.
 
 ### Prerequisites
 
 **Accounts and licenses**
 
-- An **Azure subscription** with rights to **create resources and assign roles** — this
-  means **Owner**, or **Contributor + User Access Administrator**. Contributor alone is
-  not enough, because the setup scripts create role assignments (ACR pull, Cognitive
-  Services User, Fabric workspace membership, OAuth2 grants).
-- A **Microsoft 365 tenant** with **Agent 365 + Microsoft Copilot** licenses, enrolled in
-  the [Frontier preview program](https://adoption.microsoft.com/en-us/copilot/frontier-program/).
-  Publishing and approving the autopilot in Agent 365 (demo 5) requires a
-  **Global Administrator** in that tenant.
+- An **Azure subscription** where you can create resources and assign roles (**Owner**, or
+  **Contributor + User Access Administrator**).
+- A **Microsoft 365 tenant** with **Agent 365** and **Microsoft 365 Copilot** licenses, enrolled
+  in the [Frontier preview program](https://adoption.microsoft.com/en-us/copilot/frontier-program/).
+  Demo 5 also needs a **Global Administrator** in that tenant to publish and approve the autopilot.
+- A **Web IQ** private-preview key — Web IQ is not generally available yet.
 
-**Platform services you must already have**
-
-You provide these existing services; the setup steps below create all the Caldova demo
-content *inside* them. None of these are created for you.
-
-- An **Azure AI Search** service — the Foundry IQ knowledge base is created here.
-- A **Microsoft Fabric** workspace on an active **capacity** — the Fabric tables, ontology,
-  semantic model, and Data Agent are created here.
-- A **Microsoft Foundry** project with a reasoning model deployment (e.g. `gpt-5.4-mini`) —
-  it holds the four IQ connections and hosts the agent.
-- A **Web IQ** (`api.microsoft.ai`) subscription key.
-
-**What the setup creates for you** (in the steps below)
-
-- In Fabric: the `CaldovaSupplierAnalytics` lakehouse, the ontology, the `SupplierSM`
-  semantic model, a report, and the published `SupplierDataAgent`.
-- In the Foundry project: the four Microsoft IQ connections, the `caldova-supply-tools`
-  toolbox, and the deployed **Foundry Hosted Agent**.
-- The **Agent 365 autopilot** (via `azd up` + the Agent 365 publish/hire steps).
-
-**Tools**
+**Tools** (install these first)
 
 - [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (`azd`)
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (`az`)
 - [Python 3.11+](https://www.python.org/downloads/) and [uv](https://docs.astral.sh/uv/)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
-Full prerequisites and permissions detail: [`../docs/setup.md`](../docs/setup.md).
+**Have this ready before setup**
 
-### 1. Provision the Fabric data
+- Your **Web IQ preview key** → `WEB_IQ_API_KEY`.
 
-The Caldova dataset lives in [`../data/caldova-upstream/`](../data/caldova-upstream/). From
-that folder, create a `.env` with `FABRIC_TENANT_ID` and `FABRIC_WORKSPACE_ID` (your
-existing workspace), sign in (`azd auth login` / `az login`), then `uv sync`. Run the
-scripts in order:
+`azd up` creates the Microsoft Fabric workspace for you. To reuse an existing workspace
+instead, set `FABRIC_WORKSPACE_ID` to its id before you run it.
+
+### 1. Provision and build everything — `azd up`
+
+From the repo root, run:
 
 ```bash
-uv run python provision/fabric/create_fabric_lakehouse.py
-uv run python provision/fabric/create_fabric_ontology.py
-# Build the ontology graph — REQUIRED, or ontology questions time out:
-uv run python ../../infra/scripts/refresh-ontology-graph.py
-uv run python provision/fabric/create_fabric_semantic_model.py
-uv run python provision/fabric/create_fabric_reports.py
-uv run python provision/fabric/create_fabric_data_agent.py
+az login
+azd auth login
+azd env set WEB_IQ_API_KEY <your-web-iq-preview-key>
+azd up
 ```
 
-This creates the `CaldovaSupplierAnalytics` lakehouse, the `CaldovaMedicinalProductOntology`
-ontology, the `SupplierSM` semantic model, a report, and the published `SupplierDataAgent`.
-Details: [`../data/caldova-upstream/provision/fabric/README.md`](../data/caldova-upstream/provision/fabric/README.md)
-and [`../docs/ontology.md`](../docs/ontology.md).
+This provisions the Azure resources (Microsoft Foundry, Container Registry, Azure AI Search,
+and a Fabric capacity), then builds the rest: the Fabric data, the four Microsoft IQ
+connections, the toolbox, the Foundry Hosted Agent, the autopilot, and the demo emails.
 
-> **The graph refresh is the gotcha.** An ontology's backing graph starts **empty**; until
-> it is refreshed, the Data Agent's ontology questions **hang ~5 min and fail**. If that
-> happens, re-run `refresh-ontology-graph.py` (or in the portal: the `…_graph` item →
-> **… → Schedule → Refresh now**), then re-run `create_fabric_data_agent.py`.
+> **If an ontology question hangs (~5 minutes) and fails**, refresh the ontology graph:
+> run [`../infra/scripts/refresh-ontology-graph.py`](../infra/scripts/refresh-ontology-graph.py)
+> (or in the portal, open the `…_graph` item → **… → Schedule → Refresh now**), then re-run
+> the Data Agent step. See [`../docs/ontology.md`](../docs/ontology.md).
 
-### 2. Seed the four IQ connections
+### 2. Finish the autopilot (admin-gated, demo 5)
 
-Register the four Microsoft IQ connections in your Foundry IQ project — **Foundry IQ**
-(`caldova-supply-kb`, Azure AI Search KB), **Fabric IQ** (`caldova-supply-dataagent`),
-**Work IQ** (`WorkIQ`), and **Web IQ** (`WebIQ`). This also seeds the Caldova document
-corpus into the knowledge base. See [`../infra/README.md`](../infra/README.md).
-
-### 3. Deploy the Foundry Hosted Agent (demos 1–4)
-
-From [`../src/foundry-hosted-agent/`](../src/foundry-hosted-agent/):
-
-```powershell
-# Create the one toolbox (all four IQs; Fabric + Work IQ via UserEntraToken → per-user OBO)
-./infra/scripts/create-toolbox.ps1  # pass your project + Fabric workspace/data-agent ids
-
-# Build the image + deploy the hosted agent
-./infra/scripts/deploy.ps1
-```
-
-The agent is a single `FoundryToolbox` reference; Microsoft Foundry runs the loop, so each
-IQ call shows in the **Traces** tab. Details:
-[`../src/foundry-hosted-agent/README.md`](../src/foundry-hosted-agent/README.md).
-
-### 4. Deploy + hire the autopilot (demo 5)
-
-From the repo root: `azd up` provisions the hosting project + builds and creates the
-autopilot; then register it in Agent 365, approve the blueprint, and **hire an instance in
-Teams**. Full walkthrough (with the admin approval and grant steps):
+`azd up` builds the autopilot container + version; the **Agent 365 registration** is a
+separate admin step. As a **Global Administrator**: run
+[`../infra/a365/publish-autopilot.ps1`](../infra/a365/publish-autopilot.ps1), approve the
+blueprint in the admin center, and **hire an instance in Microsoft Teams**. Full walkthrough:
 [`../docs/setup.md`](../docs/setup.md) and [`../instructions/README.md`](../instructions/README.md).
 
-### 5. Seed the demo mailboxes
+### 3. Seed the demo mailboxes
 
-Two distinct escalation emails make the "reads *my* mailbox vs *its own* mailbox" story land:
+`azd up` seeds **your** mailbox. Seed the **agent's** mailbox after the autopilot is hired:
 
-- **Your** mailbox (demo 4, Playground, on-behalf-of you): a cold-chain escalation from
-  **Priya Nair — SHP-9021 (Brightline Labs)**. Send it to yourself.
-- **The agent's** mailbox (demo 5, Teams): a cold-chain escalation from
-  **Maria Garcia — SHP-1234 (Alvexa)**.
+- **Your** mailbox (demo 4): **Priya Nair — SHP-9021 (Brightline Labs)**.
+- **The agent's** mailbox (demo 5): **Maria Garcia — SHP-1234 (Alvexa)** — run
+  [`../infra/hooks/seed-emails.ps1`](../infra/hooks/seed-emails.ps1) `-AgentMailbox <agent-upn>`
+  after hiring.
 
-### 6. Pre-flight checks (T-10 min, before recording)
+### 4. Pre-flight checks (T-10 min, before recording)
 
-- All four IQ connections healthy in the Foundry IQ project.
+- All four IQ connections healthy in the Foundry project.
 - **Warm up Fabric IQ — both sources**: ask one OTIF question *and* one ontology question
   (e.g. "Which medicinal products contain Caldovexine?") so neither cold-starts on stage.
-- Hosted agent reachable in the Playground; autopilot hired and responding in Teams.
-- After any redeploy, retire the old agent version so the Playground/Teams roll to `@latest`.
-
-
-
-1. **Context is the differentiator** — the four IQs give agents trusted enterprise grounding.
-2. **One backbone, many agents** — build one agent grounded in Microsoft IQ, then the next one
-   faster on the *same* IQ (no new connectors or RAG).
-3. **Enterprise-ready** — permission-aware, traceable, centrally governed via Agent 365.
+- Hosted agent reachable in the Playground; autopilot hired and responding in Microsoft Teams.
+- After any redeploy, retire the old agent version so the Playground and Microsoft Teams roll to `@latest`.
 
 ## Support
 

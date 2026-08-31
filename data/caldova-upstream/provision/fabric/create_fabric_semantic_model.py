@@ -6,7 +6,7 @@ import time
 import warnings
 from pathlib import Path
 
-from azure.identity import AzureDeveloperCliCredential
+from azure.identity import AzureCliCredential as AzureDeveloperCliCredential  # az is reliable inside the azd hook (azd auth token can time out there)
 from dotenv import load_dotenv, set_key
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module=r"microsoft_fabric_api\..*")
@@ -114,7 +114,7 @@ def main() -> None:
     load_dotenv(ENV_PATH, override=True)
     tenant_id = require_env("FABRIC_TENANT_ID")
     workspace_id = require_env("FABRIC_WORKSPACE_ID")
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60)
     try:
         client = FabricClient(credential)
         lakehouse = find_lakehouse(client, workspace_id)
