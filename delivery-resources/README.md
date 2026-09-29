@@ -1,5 +1,11 @@
 # Delivery Resources
 
+## Core materials
+
+| Item | Link | Notes |
+|:--|:--|:--|
+| Delivery deck | [English](https://aka.ms/aitour27/BRK240/slides/en) | Required URL |
+
 ## How to deliver this session
 
 🥇 Thanks for delivering this session!
