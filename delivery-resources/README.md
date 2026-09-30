@@ -1,10 +1,14 @@
 # Delivery Resources
 
-## Core materials
+## 📁 Core materials
 
-| Item | Link | Notes |
-|:--|:--|:--|
-| Delivery deck | coming soon | Required URL |
+| Resource | Link | Description |
+|---|---|---|
+| Session delivery deck | Avail 10.12.26 | The session delivery slides (Caldova supply-assurance storyline) |
+| Full session recording | _add link_ | The full session presentation |
+| Demo flows | [demos/README.md](demos/README.md) | Five per-demo walkthroughs and prompts |
+| Setup and deploy | [Prepare Your Environment](#-prepare-your-environment) | Full inline setup (also in [../docs/setup.md](../docs/setup.md)) |
+| Attendee instructions | [../instructions/README.md](../instructions/README.md) | Start here for the guided path |
 
 ## How to deliver this session
 
@@ -27,16 +31,6 @@ Before you deliver the session, please:
    seeded.
 5. Warm up the Fabric Data Agent (semantic model and ontology) with one query each before
    going live.
-
-## 📁 File Summary
-
-| Resource | Link | Description |
-|---|---|---|
-| Session delivery deck | _add link_ | The session delivery slides (Caldova supply-assurance storyline) |
-| Full session recording | _add link_ | The full session presentation |
-| Demo flows | [demos/README.md](demos/README.md) | Five per-demo walkthroughs and prompts |
-| Setup and deploy | [Prepare Your Environment](#-prepare-your-environment) | Full inline setup (also in [../docs/setup.md](../docs/setup.md)) |
-| Attendee instructions | [../instructions/README.md](../instructions/README.md) | Start here for the guided path |
 
 ## 🖥️ Demo Videos
 
