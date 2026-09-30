@@ -4,7 +4,7 @@
 
 | Item | Link | Notes |
 |:--|:--|:--|
-| Delivery deck | [English](https://aka.ms/aitour27/BRK240/slides/en) | Required URL |
+| Delivery deck | coming soon | Required URL |
 
 ## How to deliver this session
 
