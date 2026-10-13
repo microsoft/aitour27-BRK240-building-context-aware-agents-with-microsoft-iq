@@ -4,7 +4,7 @@
 
 | Resource | Link | Description |
 |---|---|---|
-| Session delivery deck | Avail 10.12.26 | The session delivery slides (Caldova supply-assurance storyline) |
+| Session delivery deck | Slides: [English](https://aka.ms/aitour27/BRK240/slides/en) | The session delivery slides (Caldova supply-assurance storyline) |
 | Full session recording | [BRK240 Recording](https://aka.ms/aitour27/BRK240/youtube) | The full session presentation |
 | Demo flows | [demos/README.md](demos/README.md) | Five per-demo walkthroughs and prompts |
 | Setup and deploy | [Prepare Your Environment](#-prepare-your-environment) | Full inline setup (also in [../docs/setup.md](../docs/setup.md)) |
