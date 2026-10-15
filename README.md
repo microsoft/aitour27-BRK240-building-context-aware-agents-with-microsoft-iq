@@ -1,10 +1,10 @@
 <a name="start-building"></a>
 
 <p align="center">
-<img src="img/banner-ai-tour-27.png" alt="Microsoft AI Tour 2027" width="100%"/>
+<img src="img/banner-frontier-tour-27.png" alt="Microsoft Frontier Tour 2027" width="100%"/>
 </p>
 
-# [Microsoft AI Tour 2027](https://aitour.microsoft.com)
+# [Microsoft Frontier Tour 2027](https://aitour.microsoft.com)
 
 ## 🔥 BRK240: Building context-aware agents with Microsoft IQ
 
@@ -62,8 +62,8 @@ By the end of this session, you will be able to:
 | **[Microsoft IQ](https://aka.ms/microsoft-iq)** | The unified intelligence platform for enterprise AI |
 | **[Microsoft IQ Series](https://aka.ms/iq-series)** | Hands-on series going deeper on Foundry IQ, Fabric IQ, Work IQ, and Web IQ |
 | **[Microsoft Learn](https://learn.microsoft.com)** | Official documentation and guided learning paths |
-| **[AI Tour 2027 Resource Center](https://aka.ms/aitour27-resource-center)** | Additional session repos and materials from AI Tour 2027 |
-| **[Microsoft Foundry Community](https://aka.ms/MicrosoftFoundryDiscord-AITour27)** | Connect with other learners and experts in our Discord community |
+| **[Frontier Tour 2027 Resource Center](https://aka.ms/FrontierTour27)** | Additional session repos and materials from Frontier Tour 2027 |
+| **[Microsoft Foundry Community](https://aka.ms/MicrosoftFoundryDiscord-ft27)** | Connect with other learners and experts in our Discord community |
 
 ### 🌟 Microsoft Learn MCP Server
 
